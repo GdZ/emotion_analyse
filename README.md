@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# emotion_analyse
-=======
 # emotion_analyse
 
 this is fork from [Twitter Emotion](https://github.com/cnnjqzr/NLP_Lab)
@@ -23,4 +20,3 @@ and have been restructure and developed
 
 ## we created a stop word list
 - we found one from the internet and made a new file.
->>>>>>> 27e2c2634a7031c7da60ac425a3f44876a5d7243
