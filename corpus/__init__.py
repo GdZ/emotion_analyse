@@ -11,7 +11,7 @@ else:
 TRAIN_CONTEXT_IDX = 4
 
 # release data
-TRAIN_CSV = ROOT_PATH + 'tweet.csv'
+TRAIN_CSV = ROOT_PATH + 'train.csv'
 TEST_CSV = ROOT_PATH + 'test.csv'
 # prepare
 PROCESSING_TRAIN_TXT = ROOT_PATH + 'processing_train.txt'
