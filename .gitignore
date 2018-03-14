@@ -1,0 +1,13 @@
+# python
+*.pyc
+
+# pycharm
+*.idea
+*.idea/*
+*__pycache__
+
+# data
+*.csv
+*.txt
+
+
