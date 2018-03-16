@@ -7,12 +7,15 @@ and have been restructure and developed
 
 ## How to run this programm
 
-`make`
+```
+make
+```
 
 ## How to clean created files
 
-`make clean`
-
+```
+make clean
+```
 
 # Twitter Emotion:
 ## First Step: Evaluation
