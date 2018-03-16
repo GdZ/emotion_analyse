@@ -5,6 +5,15 @@ this is fork from [Twitter Emotion](https://github.com/cnnjqzr/NLP_Lab)
 and have been restructure and developed
 
 
+## How to run this programm
+
+`make`
+
+## How to clean created files
+
+`make clean`
+
+
 # Twitter Emotion:
 ## First Step: Evaluation
 - We use F-score and accuracy to evaluate the predicted data and the gold data
