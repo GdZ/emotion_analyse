@@ -17,6 +17,32 @@ make
 make clean
 ```
 
+
+## tree of project
+
+```
+/
+├── corpus
+│   ├── debug           // just for test data
+│   ├── __init__.py     // all files define
+│   └── release         // just for release data
+├── emotion
+│   ├── controller      // Corpus
+│   ├── __init__.py
+│   ├── model           // Perception, Bayes, Embedding
+│   ├── samples
+│   └── utils
+├── emotion_task.py     // master program
+├── LICENSE
+├── makefile
+├── README.md
+└── utils               // utils toolkit
+    ├── config.py       // config of this project
+    ├── __init__.py
+    ├── io.py           // some useful handle for files
+    └── logger.py       // a custermized logger
+```
+
 # Twitter Emotion:
 ## First Step: Evaluation
 - We use F-score and accuracy to evaluate the predicted data and the gold data
