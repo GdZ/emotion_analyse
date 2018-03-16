@@ -1,10 +1,8 @@
 # coding: utf-8
-import sys
 # self define
 from utils import io
-from emotion import utils
 from emotion.utils import pre_processing as pp
-from emotion.model.Corpus import Corpus
+from emotion.controller.Corpus import Corpus
 # const variable
 from corpus import TRAIN_CSV as TRAIN_CSV
 from corpus import TEST_CSV as TEST_CSV
@@ -12,7 +10,8 @@ from corpus import STOP_WORD_TXT as STOP_WORD_TXT
 from corpus import PROCESSING_TRAIN_TXT as PROCESSING_TRAIN_TXT
 from corpus import PROCESSING_TEST_TXT as PROCESSING_TEST_TXT
 # idx
-from corpus import TRAIN_CONTEXT_IDX as IDX_TWEET_CONTEXT
+from corpus import TRAIN_CONTEXT_IDX as TRAIN_CONTEXT_IDX
+from corpus import SPLIT_STR as SPLIT_STR
 # release
 from utils.logger import logger
 from utils import config
@@ -33,12 +32,12 @@ def prepare(ch=1):
 
     for line in fd:
         try:
-            line_split = line.decode('utf-8').strip().split(';', IDX_TWEET_CONTEXT)
-            logger.d('line_split: ' + line_split[4])
-            new_line = line_split[IDX_TWEET_CONTEXT]
+            line_split = line.decode('utf-8').strip().split(SPLIT_STR, TRAIN_CONTEXT_IDX)
+            logger.d('line_split: ' + line_split[TRAIN_CONTEXT_IDX])
+            new_line = line_split[TRAIN_CONTEXT_IDX]
             contents.append(new_line)
-        except IndexError:
-            logger.error(1)
+        except IndexError, e:
+            logger.e(IndexError, e)
 
     logger.i('delete stop words')
     for twitter in contents:
@@ -69,11 +68,12 @@ def training(option='perception'):
     # perception-> use bag of words and perception
     # create vector
     if 'vector' == option:
-        logger.i("training by perception....")
+        logger.i("create by vector....")
         train_corpus.generate_vs_model()
 
     # perception
     elif 'perception' == option:
+        logger.i("training by perception....")
         train_corpus.train_perception()
 
     # bayes

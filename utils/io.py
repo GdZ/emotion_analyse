@@ -17,22 +17,24 @@ def read_file(path, mode='r'):
 
 
 def write_file(path, contents):
-    logger.i("[io] write file '%s' with utf-8" % path)
+    logger.i("[io] write file '%s' with utf-8, contents:%d" % (path, len(contents)))
     f = codecs.open(path, "w", "utf-8")
     for line in contents:
-        # line = line.encode('utf-8')
-        logger.d('line: ' + str(line))
-
-        if isinstance(line[0], int):
-            new_line = " ".join(str(x) for x in line)
+        logger.d('line(%s, %d): %s' %(type(line), len(line), line))
+        if 0 == len(line):
+            continue
         else:
-            new_line = " ".join(('' + x) for x in line)
+            # line = line.encode('utf-8')
+            if isinstance(line[0], int):
+                new_line = " ".join(str(x) for x in line)
+            else:
+                new_line = " ".join(('' + x) for x in line)
 
-        f.write(new_line.replace(u' ä ', u'ä')
-                .replace(u' ö ', u'ö')
-                .replace(u' ü ', u'ü')
-                .replace(u' ß ', u'ß'))
-        f.write('\n')
+            f.write(new_line.replace(u' ä ', u'ä')
+                    .replace(u' ö ', u'ö')
+                    .replace(u' ü ', u'ü')
+                    .replace(u' ß ', u'ß'))
+            f.write('\n')
 
 
 def read_stop_word(stop_word_file):

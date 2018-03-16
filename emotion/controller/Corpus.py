@@ -1,14 +1,16 @@
 # coding: utf-8
+"""
+this file contain some method to deal with different framework to create corpus library
+"""
 import gensim
 import pickle
-import codecs
 # utils
 from utils import io
 # emotion package
 from emotion import utils
-from emotion.utils import perceptron_sparse as ps
-from emotion.controller.Bayes import naive_bayes
-import emotion.controller.Embedding
+from emotion.model import Perception as per
+from emotion.model.Bayes import naive_bayes
+import emotion.model.Embedding
 # const variable
 from corpus import WORD_LIST_TXT
 from corpus import PROCESSING_TRAIN_TXT as PROCESSING_TRAIN_TXT
@@ -17,6 +19,7 @@ from corpus import TRAIN_LABEL_CSV as TRAIN_LABEL_CSV
 from corpus import VECTOR_TRAIN_TXT as VECTOR_TRAIN_TXT
 from corpus import VECTOR_TEST_TXT as VECTOR_TEST_TXT
 from corpus import EMB_TRAIN_TXT as EMB_TRAIN_TXT
+from corpus import OUTPUT_FILE_MODEL as OUTPUT_FILE_MODEL
 # logger
 from utils import config
 from utils.logger import logger
@@ -39,6 +42,7 @@ class Corpus:
         self.vector_text = []
         self.tweet_tokens = []
 
+    # read label data
     def read_label(self):
         file_handle = io.open_file(self.label_file)
         for line in file_handle:
@@ -47,18 +51,21 @@ class Corpus:
 
         return self.gold_labels
 
+    # read training file
     def read_train(self):  # different input
         with io.read_file(self.train_file, "r") as r:
             for line in r:
                 self.train_corpus.append(line)
         logger.i('read train successfully')
 
+    # read test data
     def read_test(self):  # different input
         with io.read_file(self.test_file, "r") as r:
             for line in r:
                 self.test_corpus.append(line)
         logger.i('read test successfully')
 
+    #
     def bag_of_word(self):
         vector_text = []
         word_list = {}
@@ -79,6 +86,7 @@ class Corpus:
 
         return word_list, vector_text
 
+    # generate a model
     def generate_vs_model(self):
         logger.i('generate bag of word...')
         word_list, vector_train = self.bag_of_word()
@@ -100,26 +108,32 @@ class Corpus:
 
         return word_list, vector_train
 
+    # training with perception
     def train_perception(self):
         file_word_list = io.open_file(WORD_LIST_TXT)
         file_vector_train = io.open_file(VECTOR_TRAIN_TXT)
         word_list = []
         vector_train = []
 
+        logger.d('file_word_list: %s' % type(file_word_list))
+
         for line in file_word_list:
+            # logger.d('line: %s' % line)
             word_list.append(line.strip())
+        # logger.d('word_list:\n%s' % word_list)
 
         logger.i('read word list')
         for line in file_vector_train:
             vector_train.append(line.strip())
 
         logger.i('read vector text for train')
-        # x, y, w = ps.train(word_list, self.gold_labels, vector_train, iteration=20)
-        x, y, w = ps.train(word_list, self.read_label(), vector_train, iteration=20)
+        x, y, w = per.train(word_list, self.gold_labels, vector_train, iteration=20)
+        logger.d('[ps->train_perception] x:%d, y:%d, w:%d' % (len(x), len(y), len(w)))
 
-        acc = ps.test(x, y, w)
-        logger.i(acc)
+        acc = per.test(x, y, w)
+        logger.i('[ps->train_perception] correct percent of the result: %.4f' % acc)
 
+    # use embedding
     @staticmethod
     def embedding():
         vector_train = []
@@ -128,13 +142,14 @@ class Corpus:
         for line in file_vector_train:
             vector_train.append(line.strip())
 
-        emotion.controller.Embedding.generate_model(vector_train)
-        model = gensim.models.Word2Vec.load('./corpus/model')
-        average = emotion.controller.Embedding.make_average(vector_train[0:10], model)
+        emotion.model.Embedding.generate_model(vector_train)
+        model = gensim.models.Word2Vec.load(OUTPUT_FILE_MODEL)
+        average = emotion.model.Embedding.make_average(vector_train[0:10], model)
 
         f = io.read_file(EMB_TRAIN_TXT, 'wb')
         pickle.dump(average, f)
 
+    # training with bayes
     def train_bayes(self):
         naive_bayes(self.train_file, self.label_file, self.test_file)
         # to do: use evaluation

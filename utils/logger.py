@@ -1,4 +1,5 @@
 import time
+import traceback
 
 
 class logger:
@@ -9,11 +10,11 @@ class logger:
         self.debug = self.config.DEBUG
         self.warn = self.config.WARN
         self.error = self.config.ERROR
-        self.fatal = self.config.FATIL
+        self.fatal = self.config.FATAL
 
     def d(self, msg):
         if self.debug:
-            print("[release] %s %s" % (time.time(), msg))
+            print("[debug] %s %s" % (time.time(), msg))
         else:
             pass
 
@@ -29,9 +30,15 @@ class logger:
         else:
             pass
 
-    def e(self, msg):
+    def e(self, Exception, e):
         if self.error:
-            print("[warn] %s %s" % (time.time(), msg))
+            print("[error] %s %s" % (time.time(), e.message))
+            print 'str(Exception):\t', str(IndexError)
+            print 'str(e):\t\t', str(e)
+            print 'repr(e):\t', repr(e)
+            print 'e.message:\t', e.message
+            print 'traceback.print_exc():'; traceback.print_exc()
+            print 'traceback.format_exc():\n%s' % traceback.format_exc()
         else:
             pass
 
