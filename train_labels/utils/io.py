@@ -11,17 +11,21 @@ def open_file(path):
     return open(path)
 
 
-def read_file(path, mode='r'):
+def open_file_mode(path, mode='r'):
     logger.i("[io] read file '%s' with '%s'" %(path, mode))
     return open(path, mode)
 
 
 def write_file(path, contents):
-    logger.i("[io] write file '%s' with utf-8, contents:%d" % (path, len(contents)))
+    logger.i("[io->write_file] write file '%s' with utf-8, contents:%d" % (path, len(contents)))
     f = codecs.open(path, "w", "utf-8")
+    pos = 1;
     for line in contents:
-        logger.d('line(%s, %d): %s' %(type(line), len(line), line))
+        logger.d('[io->write_file] [%d]line(%s, %d): %s' %(pos, type(line), len(line), line))
+        pos += 1
         if 0 == len(line):
+            logger.w('[io->write_file] %s length is: %d' % (line, len(line)))
+            f.write('\n')
             continue
         else:
             # line = line.encode('utf-8')

@@ -1,5 +1,6 @@
 INFO = True
-DEBUG = False
+DEBUG = True
+# DEBUG = False
 WARN = True
 ERROR = True
 FATAL = True

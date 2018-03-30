@@ -66,22 +66,22 @@ def training(option='perception'):
     train_corpus.read_test()
 
     # perception-> use bag of words and perception
-    # create vector
+    # [3] create vector
     if 'vector' == option:
         logger.i("create by vector....")
         train_corpus.generate_vs_model()
 
-    # perception
+    # [4] perception
     elif 'perception' == option:
         logger.i("training by perception....")
         train_corpus.train_perception()
 
-    # bayes
+    # [5] bayes
     elif 'bayes' == option:
         logger.i("training by use bayes model")
         train_corpus.train_bayes()
 
-    # emb
+    # [6] emb
     elif 'emb' == option:
         logger.i("training by use emb model....")
         train_corpus.embedding()
@@ -96,7 +96,7 @@ def main():
     menu = ("\n"
             "---------------------------------\n"
             "1. pre-process train\n"
-            "2. pre-process test\n"
+            "2. pre-process check_accuracy\n"
             "3. training with vector\n"
             "4. training with perception\n"
             "5. training with bayes\n"

@@ -7,7 +7,7 @@ from utils.config import ORIGIN as ORIGIN
 
 # ######################### load features & labels ######################
 if ORIGIN:
-    # original test
+    # original check_accuracy
     emotion = {'surprise': 0, 'anger': 1, 'happy': 2, 'love': 3, 'fear': 4, 'trust': 5, 'disgust': 6, 'sad': 7}
 else:
     # self defined
@@ -16,36 +16,39 @@ else:
 logger = logger(config)
 
 
+# """
+# parse vector_text to vectors and labels
+# """
 def parse(word_list, train_label, vector_text):
     feature_num = 0
     count = 0
-    x = []
-    y = []
+    vectors = []
+    labels = []
 
     for line in word_list:
         feature_num += 1
 
     for line in train_label:
-        y.append(line.strip())
+        labels.append(line.strip())
 
-    emotion_num = len(set(y))
+    emotion_num = len(set(labels))
 
     for line in vector_text:
         logger.d('[ps->parse] line: %s' % line)
         if not line.split():  # delete null string
             logger.i('[ps->parse] it will delete null string.')
-            y[count] = 'null'
+            labels[count] = 'null'
         temp = list(line.strip().split(' '))
         t = list(map(int, temp))
-        x.append(t)
+        vectors.append(t)
         count += 1
 
     # delete label of null string
-    y = [y[i] for i in range(len(y)) if y[i] != 'null']
-    y = np.array(y[0: count])
-    logger.i('[Perception->parse] x:%d, y:%d' % (len(x), len(y)))
+    labels = [labels[i] for i in range(len(labels)) if labels[i] != 'null']
+    labels = np.array(labels[0: count])
+    logger.i('[Perception->parse] vectors:%d, labels:%d' % (len(vectors), len(labels)))
 
-    return x, y, feature_num, emotion_num
+    return vectors, labels, feature_num, emotion_num
 
 
 # ######################## perception with sparse matrix(train) ################
@@ -70,21 +73,21 @@ def mod_weight(vector, weight, y_gold, y_pre):
 
 
 def train(word_list, train_label, vector_text, iteration):
-    x, y, feature_num, emotion_num = parse(word_list, train_label, vector_text)
-    logger.d("[ps->train] len(x):%d, len(y):%d, feature_num:%d, emotion_num:%d" \
-             % (len(x), len(y), feature_num, emotion_num))
+    vector, label, feature_num, emotion_num = parse(word_list, train_label, vector_text)
+    logger.d("[ps->train] len(vectors):%d, len(y):%d, feature_num:%d, emotion_num:%d" \
+             % (len(vector), len(label), feature_num, emotion_num))
 
-    w = np.zeros([feature_num, emotion_num])
+    weight = np.zeros([feature_num, emotion_num])
 
     for i in range(iteration):
-        # logger.i("[ps->train] i:%d, x:%d, y:%d" % (i, len(x), len(y)))
-        for m in range(len(x)):
-            if len(y) <= m:
+        logger.i("[ps->train] i:%d, x:%d, y:%d" % (i, len(vector), len(label)))
+        for m in range(len(vector)):
+            if len(label) <= m:
                 logger.w('[ps->train] m is >= len(y)')
                 continue
-            y_gold_str = y[m]
+            y_gold_str = label[m]
             y_gold = emotion[y_gold_str]
-            y_pre = matrix_dot(x[m], w)
+            y_pre = matrix_dot(vector[m], weight)
             # logger.d("[ps->train] emotion: %s" % emotion)
             # logger.d("[ps->train] y_gold_str, y_gold, y_pre = %s, %s, %s" % (y_gold_str, y_gold, str(y_pre)))
             re = np.where(y_pre == np.max(y_pre))
@@ -96,16 +99,15 @@ def train(word_list, train_label, vector_text, iteration):
                 y_pre = re[1][0]
 
             if y_pre != y_gold:
-                w = mod_weight(x[m], w, y_gold, y_pre)
+                weight = mod_weight(vector[m], weight, y_gold, y_pre)
 
-    return x, y, w
+    return vector, label, weight
 
 
-# ######################## perception with sparse matrix(test) #################
-def test(x, y, w):
-    y_pre = [] # find the idx of max-value in each line(x)
-    correct_num = 0
-    logger.i('[ps->test] x:%d, y:%d, w:%d' %(len(x), len(y), len(w)))
+# generate labels by vectors and weights
+def generate_labels(x, w):
+    labels = [] # find the idx of max-value in each line(x)
+    logger.i('[ps->generate_labels] x:%d, w:%d' %(len(x), len(w)))
 
     for m in range(len(x)):
         # y_pre = matrix_dot(x[m], w)
@@ -116,15 +118,26 @@ def test(x, y, w):
         else:
             tmp = re[1][0]
         # y_pre.append(tmp)
-        y_pre.append(tmp)
+        labels.append(tmp)
 
-    y_gold = list(y)
+    return labels
+
+
+# ######################## perception with sparse matrix(check_accuracy) #################
+def check_accuracy(trained_labels, gold_labels, w):
+    correct_num = 0
+    logger.i('[ps->check_accuracy] pre_labels:%d, y:%d, w:%d' % (len(trained_labels), len(gold_labels), len(w)))
+
+    y_gold = list(gold_labels)
     for i in range(len(y_gold)):
-        if emotion[y_gold[i]] == y_pre[i]:
+        if emotion[y_gold[i]] == trained_labels[i]:
             correct_num += 1
         else:
-            logger.i('emotion[y_gold[%d]=%s]=%s and y_pre[%d]=%s' % (i, y_gold[i], emotion[y_gold[i]], i, y_pre[i]))
+            logger.i('emotion[y_gold[%d]=%s]=%s and y_pre[%d]=%s'
+                     % (i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
+    # calculate the accuracy
     accuracy = (correct_num + 0.0) / len(y_gold)
-    logger.d('[Perception->test] correct_num:%d, y_gold:%d = %f' % (correct_num, len(y_gold), accuracy))
+    logger.d('[Perception->check_accuracy] correct_num:%d, y_gold:%d = %f'
+             % (correct_num, len(y_gold), accuracy))
 
     return accuracy

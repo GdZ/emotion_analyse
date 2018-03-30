@@ -8,6 +8,7 @@ logger = logger(config)
 
 def make_test(word_list, text):
     vector_text = []
+    pos = 1
     for line in text:
         vector_line = []
         line = line.split()
@@ -16,4 +17,5 @@ def make_test(word_list, text):
                 index = word_list[word]
                 vector_line.append(index)
         vector_text.append(vector_line)
+        pos += 1
     return vector_text

@@ -72,7 +72,7 @@ word_list()
 
 def emotions_and_features_counts():
     """
-    test
+    check_accuracy
     :return:
     """
     tweets = training_tweets
