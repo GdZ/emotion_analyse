@@ -80,10 +80,10 @@ def train(word_list, train_label, vector_text, iteration):
     weight = np.zeros([feature_num, emotion_num])
 
     for i in range(iteration):
-        logger.i("[ps->train] i:%d, x:%d, y:%d" % (i, len(vector), len(label)))
+        logger.d("[ps->train] i:%d, x:%d, y:%d" % (i, len(vector), len(label)))
         for m in range(len(vector)):
             if len(label) <= m:
-                logger.w('[ps->train] m is >= len(y)')
+                logger.d('[ps->train] m is >= len(y)')
                 continue
             y_gold_str = label[m]
             y_gold = emotion[y_gold_str]
@@ -133,7 +133,7 @@ def check_accuracy(trained_labels, gold_labels, w):
         if emotion[y_gold[i]] == trained_labels[i]:
             correct_num += 1
         else:
-            logger.i('emotion[y_gold[%d]=%s]=%s and y_pre[%d]=%s'
+            logger.d('emotion[y_gold[%d]=%s]=%s and y_pre[%d]=%s'
                      % (i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
     # calculate the accuracy
     accuracy = (correct_num + 0.0) / len(y_gold)

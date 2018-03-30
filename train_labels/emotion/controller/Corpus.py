@@ -177,26 +177,29 @@ class Corpus:
         logger.i('read vector text for train')
         x, y, w = per.train(word_list, self.gold_labels, vector_train, iteration=20)
         logger.d('[ps->train_perception] x:%d, y:%d, w:%d' % (len(x), len(y), len(w)))
-        # create labels
-        labels_train = per.generate_labels(x, w)
 
-        # training the label
+        # create labels for training data
+        labels_train = per.generate_labels(x, w)
+        # checking correct percent of the training data
+        acc = per.check_accuracy(labels_train, y, w)
+        logger.i('[ps->train_perception] correct percent of the result: %.4f' % acc)
+
+        # ------------------------------------------------------------------
+        # training the label for test
         x_t, y_t, w_t = per.train(word_list, self.gold_labels, vector_test, iteration=20)
         logger.d('[ps->train_perception] x:%d, y:%d, w:%d' % (len(x_t), len(y_t), len(w_t)))
 
-        # create labels
+        # create labels for test
         labels_test = per.generate_labels(x_t, w_t)
         logger.d('labels_test(%d) = %d' % (len(labels_test), labels_test[0]))
 
-        # store labels to file
+        # store labels for test to file
         f_l = io.open_file_mode(LABELS_FILE_TXT, "w")
         for l in labels_test:
             # logger.i('l:%d' % l)
             f_l.write(str(l))
             f_l.write('\n')
 
-        acc = per.check_accuracy(x, y, w)
-        logger.i('[ps->train_perception] correct percent of the result: %.4f' % acc)
 
     # use embedding
     @staticmethod
