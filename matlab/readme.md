@@ -39,3 +39,15 @@ main
 # system require
 
 matlab 2017b
+
+
+# emotion
+
+```
+average_label * [ favor, retweet, reply ]
+
+nr_favor <--> user
+
+emotion_value = sum(retweet * label)/length(label)
+
+```

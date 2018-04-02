@@ -59,6 +59,12 @@ function compute(tweet)
     delta_favor = [];
     delta_retweet = [];
     delta_reply = [];
+    % delta^2 of number
+    delta2_user = [];
+    delta2_tweet = [];
+    delta2_favor = [];
+    delta2_retweet = [];
+    delta2_reply = [];
     % sum of count
     sum_user = [];
     sum_tweet = [];
@@ -75,7 +81,6 @@ function compute(tweet)
     % date_idx - index of a day in array date
     % date_pos - index of a day in array date_ds
     [date_ds, date_idx, date_pos] = unique(date);
-    [uid_ds, uid_idx, uid_pos] = unique(uid);
 
     % --------------------------------------------------------------------------
     BREIT = length(date_ds);
@@ -103,11 +108,17 @@ function compute(tweet)
         sum_reply(i,:) = sum(count_reply);
 
         if 1 == i
-            delta_tweet(i,:) = 0;
-            delta_user(i,:) = 0;
-            delta_favor(i,:) = 0;
-            delta_retweet(i,:) = 0;
-            delta_reply(i,:) = 0;
+            delta_tweet(i,:) = sum_tweet(i,:);
+            delta_user(i,:) = sum_user(i,:);
+            delta_favor(i,:) = sum_favor(i,:);
+            delta_retweet(i,:) = sum_retweet(i,:);
+            delta_reply(i,:) = sum_reply(i,:);
+            % delta 2
+            delta2_tweet(i,:) = 0;
+            delta2_user(i,:) = 0;
+            delta2_favor(i,:) = 0;
+            delta2_retweet(i,:) = 0;
+            delta2_reply(i,:) = 0;
         else
             delta_tweet(i,:) = count_tweet(i,:) - count_tweet((i-1),:);
             delta_tweet(i,:) = count_tweet(i,1) - count_tweet(i-1,1);
@@ -115,11 +126,24 @@ function compute(tweet)
             delta_favor(i,:) = count_favor(i,:) - count_favor(i-1,:);
             delta_retweet(i,:) = count_retweet(i,:) - count_retweet(i-1,:);
             delta_reply(i,:) = count_reply(i,:) - count_reply(i-1,:);
+            % delta 2
+            delta2_tweet(i,:) = delta_tweet(i,:) - delta_tweet(i-1,:);
+            delta2_user(i,:) = delta_user(i,:) - delta_user(i-1,:);
+            delta2_favor(i,:) = delta_favor(i,:) - delta_favor(i-1,:);
+            delta2_retweet(i,:) = delta_retweet(i,:) - delta_retweet(i-1,:);
+            delta2_reply(i,:) = delta_reply(i,:) - delta_reply(i-1,:);
         end
         % label
         label_tweet(i,:) = sum(labels(index',:))/length(index);
     end
 
+
+    % --------------------------------------------------------------------------
+    % compute
+    % uid_ds - date
+    % uid_idx - index of a day in array date
+    % uid_pos - index of a day in array date_ds
+    [uid_ds, uid_idx, uid_pos] = unique(uid);
     % --------------------------------------------------------------------------
     for i = 1:length(uid_ds)
         index = find(uid_ds(i) == uid);
@@ -130,34 +154,63 @@ function compute(tweet)
     % --------------------------------------------------------------------------
     % draw picture
     if DEBUG
-        fig1 = figure(); hold on; grid on;
         % days - number of tweet
-        plot(days(1,1:BREIT), count_tweet(1:BREIT,1), 'o-', 'color', 'r');
+        fig1 = figure(); hold on; grid on;
+        % 当天发布推文数目
+        plot(days(1,1:BREIT), count_tweet(1:BREIT,1), '.-', 'color', 'r');
+        % 当天发布推文的用户数目
         plot(days(1,1:BREIT), count_user(1:BREIT,1), 'o-', 'color', 'b');
-        plot(days(1,1:BREIT), count_favor(1:BREIT,1), '.-', 'color', 'r');
-        plot(days(1,1:BREIT), count_retweet(1:BREIT,1), 'o-', 'color', 'b');
-        plot(days(1,1:BREIT), count_reply(1:BREIT,1), 'x-', 'color', 'y');
+        % 当天favor的总数目
+        %plot(days(1,1:BREIT), count_favor(1:BREIT,1), '.-', 'color', 'r');
+        % 当天转发推文总数目
+        %plot(days(1,1:BREIT), count_retweet(1:BREIT,1), 'o-', 'color', 'b');
+        % 当天回复推文总数目
+        %plot(days(1,1:BREIT), count_reply(1:BREIT,1), 'x-', 'color', 'y');
     end
 
     if DEBUG
         % days - number of user
         fig2 = figure(); hold on; grid on;
+        % 推文数目变化速度
         plot(days(1,1:BREIT), delta_tweet(1:BREIT,1), 'o-', 'color', 'r');
+        % 用户数目变化速度
         plot(days(1,1:BREIT), delta_user(1:BREIT,1), 'o-', 'color', 'b');
-        plot(days(1,1:BREIT), delta_favor(1:BREIT,1), '.-', 'color', 'r');
-        plot(days(1,1:BREIT), delta_retweet(1:BREIT,1), 'o-', 'color', 'b');
-        plot(days(1,1:BREIT), delta_reply(1:BREIT,1), 'x-', 'color', 'y');
+        % favor数目变化速度
+        %plot(days(1,1:BREIT), delta_favor(1:BREIT,1), '.-', 'color', 'r');
+        % 转发数目变化速度
+        %plot(days(1,1:BREIT), delta_retweet(1:BREIT,1), 'o-', 'color', 'b');
+        % 回复数目变化速度
+        %plot(days(1,1:BREIT), delta_reply(1:BREIT,1), 'x-', 'color', 'y');
+    end
+
+    if DEBUG
+        % days - number of user
+        fig3 = figure(); hold on; grid on;
+        % 推文数目变化速度
+        plot(days(1,1:BREIT), delta2_tweet(1:BREIT,1), 'o-', 'color', 'r');
+        % 用户数目变化速度
+        plot(days(1,1:BREIT), delta2_user(1:BREIT,1), 'o-', 'color', 'b');
+        % favor数目变化速度
+        %plot(days(1,1:BREIT), delta2_favor(1:BREIT,1), '.-', 'color', 'r');
+        % 转发数目变化速度
+        %plot(days(1,1:BREIT), delta2_retweet(1:BREIT,1), 'o-', 'color', 'b');
+        % 回复数目变化速度
+        %plot(days(1,1:BREIT), delta2_reply(1:BREIT,1), 'x-', 'color', 'y');
     end
 
     if DEBUG
         % days - number of favor, retweet, reply
-        fig3 = figure(); hold on; grid on;
+        fig4 = figure(); hold on; grid on;
+        % 推文累计总数变化
         plot(days(1,1:BREIT), sum_tweet(1:BREIT,1), 'o-', 'color', 'r');
+        % 用户累计总数变化
         plot(days(1,1:BREIT), sum_user(1:BREIT,1), 'o-', 'color', 'b');
-        plot(days(1,1:BREIT), sum_favor(1:BREIT,1), '.-', 'color', 'r');
-        plot(days(1,1:BREIT), sum_retweet(1:BREIT,1), 'o-', 'color', 'b');
-        plot(days(1,1:BREIT), sum_reply(1:BREIT,1), 'x-', 'color', 'y');
-
+        % favor累计总数变化
+        %plot(days(1,1:BREIT), sum_favor(1:BREIT,1), '.-', 'color', 'r');
+        % 转发累计总数变化
+        %plot(days(1,1:BREIT), sum_retweet(1:BREIT,1), 'o-', 'color', 'b');
+        % 回复累计总数变化
+        %plot(days(1,1:BREIT), sum_reply(1:BREIT,1), 'x-', 'color', 'y');
     end
 
     % --------------------------------------------------------------------------
@@ -167,13 +220,15 @@ function compute(tweet)
     % draw picture
     % days - label of tweet
     if DEBUG
-        fig4 = figure(); hold on; grid on;
+        fig5 = figure(); hold on; grid on;
+        % 推文日平均情绪变化趋势
         plot(days, label_tweet, 'x-', 'color', 'r');
     end
 
     % days - label of user
     if DEBUG
-        fig5 = figure(); hold on; grid on;
+        fig6 = figure(); hold on; grid on;
+        % 单用户推文
         plot(1:length(uid_ds), label_user, '.', 'color', 'r');
     end
 
