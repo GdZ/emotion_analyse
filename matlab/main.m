@@ -21,4 +21,4 @@ tweet = init();
 
 %draw(tweet);
 compute(tweet);
-labels();
+labels(tweet);
