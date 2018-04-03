@@ -200,8 +200,9 @@ class Corpus:
             f_l.write(str(l))
             f_l.write('\n')
 
-
+    # """
     # use embedding
+    # """
     @staticmethod
     def embedding():
         vector_train = []
@@ -219,6 +220,8 @@ class Corpus:
 
     # training with bayes
     def train_bayes(self):
+        # 为什么这里用的是train_file文件路经，而不是文件内容
         # naive_bayes(self.train_file, self.label_file, self.test_file)
+        # 使用文件内容以后，发现所有的概率均为0.0
         naive_bayes(self.train_corpus, self.gold_labels, self.test_corpus)
         # to do: use evaluation

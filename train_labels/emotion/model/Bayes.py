@@ -60,13 +60,16 @@ def calculate_prob(split_text, prior_prob):
     # value:token count given label
     # usages: given a certain label, calculate how many times one feature(token) occurs
     token_given_label = {}
+
     # format of token_count
     token_count = {}
+
     # format of total_token
     # key:feature
     # value:total_tokens
     # usage: how many tokens in the corpus
     total_token = {}
+
     for (label, texts) in split_text.items():
         token_given_label[label] = {}
         token_count[label] = {}
@@ -86,7 +89,7 @@ def calculate_prob(split_text, prior_prob):
                     token_given_label[label][token] = 1
                 else:
                     token_given_label[label][token] += 1
-        # print(prob_token_given_label[label])
+        logger.d(token_given_label[label])
 
     feature_label = {}
     for (label, tokens) in token_given_label.items():
@@ -121,10 +124,13 @@ def naive_bayes(file_train_text, file_train_label, file_test_text):
 
     # use feature_label to generate predicted probability
     feature_label = calculate_prob(text, prior_prob)
+
+    # compute the test corpus
     for line in test_corpus:
         line_split = line.split()
         prob = 0.0
         label = ""
+        # compute the problity of the label
         for (current_label, tokens) in feature_label.items():
             prob_current = 1.0
             for token_line in line_split:
@@ -135,6 +141,8 @@ def naive_bayes(file_train_text, file_train_label, file_test_text):
             if prob_current > prob:
                 prob = prob_current
                 label = current_label
+            logger.d('current_label: %s, prob_current: %f' %(current_label, prob_current))
+            logger.d('label: %s, prob: %f' %(label, prob))
         result_label.append(label)
 
     # output
