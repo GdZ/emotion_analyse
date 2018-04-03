@@ -71,6 +71,7 @@ def calculate_prob(split_text, prior_prob):
     total_token = {}
 
     for (label, texts) in split_text.items():
+        logger.d('[bayes->calculate_prob] label: %s, texts: %s' %(label, texts))
         token_given_label[label] = {}
         token_count[label] = {}
         for text in texts:
@@ -89,12 +90,13 @@ def calculate_prob(split_text, prior_prob):
                     token_given_label[label][token] = 1
                 else:
                     token_given_label[label][token] += 1
-        logger.d(token_given_label[label])
+        logger.d('[bayes->calculate_prob] token_given_label[%s]: %s' % (label, token_given_label[label]))
 
     feature_label = {}
     for (label, tokens) in token_given_label.items():
         feature_label[label] = {}
         for (token, count) in total_token.items():
+            logger.d('[bayes->calculate_prob] label: %s, token: %s' % (label, token))
             if token in tokens:
                 feature_label[label][token] = (tokens[token]*1.0 + 1) / (len(token_count[label]) + len(total_token)) * prior_prob[label]
             else:
@@ -141,17 +143,17 @@ def naive_bayes(file_train_text, file_train_label, file_test_text):
             if prob_current > prob:
                 prob = prob_current
                 label = current_label
-            logger.d('current_label: %s, prob_current: %f' %(current_label, prob_current))
-            logger.d('label: %s, prob: %f' %(label, prob))
+            logger.d('[bayes->calculate_prob] current_label: %s, prob_current: %f' %(current_label, prob_current))
+            logger.d('[bayes->calculate_prob] label: %s, prob: %f' %(label, prob))
         result_label.append(label)
 
     # output
     count = 0.0
     for i in range(len(train_label)):
-        logger.d('len(train_label): %d, len(result_label):%d' % (len(train_label), len(result_label)))
+        logger.d('[bayes->calculate_prob] len(train_label): %d, len(result_label):%d' % (len(train_label), len(result_label)))
         if result_label[i] == train_label[i]:
             count += 1.0
     acc = count / len(result_label) * 100.0
-    logger.i('acc: %f' % acc)
+    logger.i('[bayes->calculate_prob] acc: %f' % acc)
 
     return acc

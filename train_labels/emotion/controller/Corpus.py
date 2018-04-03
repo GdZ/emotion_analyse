@@ -11,7 +11,7 @@ from emotion import utils
 from emotion.model import Perception as per
 from emotion.model.Bayes import naive_bayes
 from emotion.model import Embedding
-from emotion.model.Evaluation import Emotion
+# from emotion.model.Evaluation import Emotion
 # const variable
 from corpus import WORD_LIST_TXT
 from corpus import PROCESSING_TRAIN_TXT as PROCESSING_TRAIN_TXT
@@ -197,7 +197,8 @@ class Corpus:
         # store labels for test to file
         f_l = io.open_file_mode(LABELS_FILE_TXT, "w")
         for l in labels_test:
-            # logger.i('l:%d' % l)
+            l = l + 1;
+            logger.d('[corpus->train_perception] l:%d' % l)
             f_l.write(str(l))
             f_l.write('\n')
 
@@ -212,9 +213,9 @@ class Corpus:
         for line in file_vector_train:
             vector_train.append(line.strip())
 
-        emotion.model.Embedding.generate_model(vector_train)
+        Embedding.generate_model(vector_train)
         model = gensim.models.Word2Vec.load(OUTPUT_FILE_MODEL)
-        average = emotion.model.Embedding.make_average(vector_train[0:10], model)
+        average = Embedding.make_average(vector_train[0:10], model)
 
         f = io.open_file_mode(EMB_TRAIN_TXT, 'wb')
         pickle.dump(average, f)

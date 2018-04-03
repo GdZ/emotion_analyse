@@ -118,6 +118,7 @@ def generate_labels(x, w):
         else:
             tmp = re[1][0]
         # y_pre.append(tmp)
+        logger.d('[ps->generate_labels] tmp: %s' % tmp)
         labels.append(tmp)
 
     return labels
