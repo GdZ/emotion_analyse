@@ -146,12 +146,12 @@ def naive_bayes(file_train_text, file_train_label, file_test_text):
         result_label.append(label)
 
     # output
-    count = 0
+    count = 0.0
     for i in range(len(train_label)):
         logger.d('len(train_label): %d, len(result_label):%d' % (len(train_label), len(result_label)))
         if result_label[i] == train_label[i]:
-            count += 1
-    acc = count / len(result_label)
-    logger.i('acc: %4f' % acc)
+            count += 1.0
+    acc = count / len(result_label) * 100.0
+    logger.i('acc: %f' % acc)
 
     return acc

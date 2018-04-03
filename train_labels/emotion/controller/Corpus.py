@@ -10,7 +10,8 @@ from utils import io
 from emotion import utils
 from emotion.model import Perception as per
 from emotion.model.Bayes import naive_bayes
-import emotion.model.Embedding
+from emotion.model import Embedding
+from emotion.model.Evaluation import Emotion
 # const variable
 from corpus import WORD_LIST_TXT
 from corpus import PROCESSING_TRAIN_TXT as PROCESSING_TRAIN_TXT
@@ -218,10 +219,13 @@ class Corpus:
         f = io.open_file_mode(EMB_TRAIN_TXT, 'wb')
         pickle.dump(average, f)
 
+    # """
     # training with bayes
+    # """
     def train_bayes(self):
         # 为什么这里用的是train_file文件路经，而不是文件内容
         # naive_bayes(self.train_file, self.label_file, self.test_file)
         # 使用文件内容以后，发现所有的概率均为0.0
         naive_bayes(self.train_corpus, self.gold_labels, self.test_corpus)
         # to do: use evaluation
+        # Emotion()

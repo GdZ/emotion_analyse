@@ -35,7 +35,8 @@ def prepare(ch=1):
             line_split = line.decode('utf-8').strip().split(SPLIT_STR, TRAIN_CONTEXT_IDX)
             logger.d('line_split: ' + line_split[TRAIN_CONTEXT_IDX])
             new_line = line_split[TRAIN_CONTEXT_IDX]
-            contents.append(new_line)
+            # contents.append(new_line)
+            contents.append(new_line.lower())
         except IndexError, e:
             logger.e(IndexError, e)
 
@@ -78,12 +79,12 @@ def training(option='perception'):
 
     # [5] bayes
     elif 'bayes' == option:
-        logger.i("training by use bayes model")
+        logger.i("training by use bayes")
         train_corpus.train_bayes()
 
     # [6] emb
     elif 'emb' == option:
-        logger.i("training by use emb model....")
+        logger.i("training by use emb....")
         train_corpus.embedding()
 
     else:

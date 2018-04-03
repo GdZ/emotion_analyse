@@ -136,7 +136,7 @@ def check_accuracy(trained_labels, gold_labels, w):
             logger.d('emotion[y_gold[%d]=%s]=%s and y_pre[%d]=%s'
                      % (i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
     # calculate the accuracy
-    accuracy = (correct_num + 0.0) / len(y_gold)
+    accuracy = (correct_num + 0.0) / len(y_gold) * 100.0
     logger.d('[Perception->check_accuracy] correct_num:%d, y_gold:%d = %f'
              % (correct_num, len(y_gold), accuracy))
 

@@ -8,7 +8,7 @@ Created on Fri May 12 10:08:06 2017
 
 
 class Emotion:
-    def __init__(self ,list_gold, list_prediction, emotion):
+    def __init__(self, list_gold, list_prediction, emotion):
         self.emotion = emotion
         self.tp = 0
         self.tn = 0
@@ -31,15 +31,15 @@ class Emotion:
                 self.fn += 1
             else:
                 self.tn += 1
-        
+
         self.accuracy = (self.tp + self.tn) / (self.tp + self.tn + self.fp + self.fn) * 100
         if (self.tp + self.fp) != 0:
-            self.precision = self.tp /(self.tp + self.fp) * 100
+            self.precision = self.tp / (self.tp + self.fp) * 100
         if (self.tp + self.fn) != 0:
             self.recall = self.tp / (self.tp + self.fn) * 100
         if self.tp != 0:
             self.F1 = 2 * self.precision * self.recall / (self.precision + self.recall)
 
     def print_result(self):
-        print ("| {0:8} | {1:9.2f} | {2:6.2f} | {3:8.2f} | {4:8.2f} |".format( self.emotion, self.precision, self.recall, self.accuracy, self.F1))
-
+        print ("| {0:8} | {1:9.2f} | {2:6.2f} | {3:8.2f} | {4:8.2f} |".format(
+            self.emotion, self.precision, self.recall, self.accuracy, self.F1))
