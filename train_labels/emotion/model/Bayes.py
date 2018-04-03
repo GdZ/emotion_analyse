@@ -1,4 +1,9 @@
 # coding: utf-8
+from utils.config import ORIGIN as ORIGIN
+from utils import config
+from utils.logger import logger
+
+logger = logger(config)
 
 
 def split_text_by_label(vector_text, label_list):
@@ -20,16 +25,32 @@ def split_text_by_label(vector_text, label_list):
 def prior_probability(label_list):
     total_count = len(label_list)
     prior_prob = {}
-    labels = ['love', 'disgust', 'trust', 'happy', 'fear', 'sad', 'anger', 'surprise']
-    # for label in labels:
-    #     count = 0
-    #     for current_label in label_list:
-    #         if label == current_label:
-    #             count += 1
-    #     prior_prob[label] = count / total_count
-    #
-    prior_prob = {'love': 0.1, 'disgust': 0.1, 'trust': 0.1, 'happy': 0.3, 'fear': 0.1, 'sad': 0.1, 'anger': 0.1,
-                  'surprise': 0.1}
+    if ORIGIN:
+        # original check_accuracy
+        # emotion = {'surprise': 0, 'anger': 1, 'happy': 2, 'love': 3, 'fear': 4, 'trust': 5, 'disgust': 6, 'sad': 7}
+        labels = ['love', 'disgust', 'trust', 'happy', 'fear', 'sad', 'anger', 'surprise']
+        # for label in labels:
+        #     count = 0
+        #     for current_label in label_list:
+        #         if label == current_label:
+        #             count += 1
+        #     prior_prob[label] = count / total_count
+        #
+        prior_prob = {'love': 0.1, 'disgust': 0.1, 'trust': 0.1, 'happy': 0.3, 'fear': 0.1, 'sad': 0.1, 'anger': 0.1,
+                      'surprise': 0.1}
+    else:
+        # self defined
+        emotion = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8, '10': 9}
+        labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+        # prior_prob = {}
+        for label in labels:
+            count = 0
+            for current_label in label_list:
+                if label == current_label:
+                    count += 1
+            prior_prob[label] = (count * 1.0) / total_count
+
+        # prior_prob = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8, '10': 9}
     return labels, prior_prob
 
 
@@ -72,16 +93,14 @@ def calculate_prob(split_text, prior_prob):
         feature_label[label] = {}
         for (token, count) in total_token.items():
             if token in tokens:
-                feature_label[label][token] = (tokens[token] + 1) / (len(token_count[label]) + len(total_token)) \
-                                              * prior_prob[label]
+                feature_label[label][token] = (tokens[token]*1.0 + 1) / (len(token_count[label]) + len(total_token)) * prior_prob[label]
             else:
-                feature_label[label][token] = 1/(len(token_count[label]) + len(total_token)) \
-                                              * prior_prob[label]
+                feature_label[label][token] = 1.0 / (len(token_count[label]) + len(total_token)) * prior_prob[label]
 
     return feature_label
 
 
-def naive_bayes(file_train_text, file_train_label, file_test):
+def naive_bayes(file_train_text, file_train_label, file_test_text):
     # read file to train and test list
     train_text = []
     train_label = []
@@ -93,7 +112,7 @@ def naive_bayes(file_train_text, file_train_label, file_test):
             train_text.append(line.strip())
     test_corpus = []
     result_label = []
-    for line in file_test:
+    for line in file_test_text:
         test_corpus.append(line.strip())
     # Split
     text = split_text_by_label(train_text, train_label)
@@ -103,11 +122,11 @@ def naive_bayes(file_train_text, file_train_label, file_test):
     # use feature_label to generate predicted probability
     feature_label = calculate_prob(text, prior_prob)
     for line in test_corpus:
-        line_split = line.split(" ")
-        prob = 0
+        line_split = line.split()
+        prob = 0.0
         label = ""
         for (current_label, tokens) in feature_label.items():
-            prob_current = 1
+            prob_current = 1.0
             for token_line in line_split:
                 if token_line not in tokens:
                     pass
@@ -120,8 +139,11 @@ def naive_bayes(file_train_text, file_train_label, file_test):
 
     # output
     count = 0
-    for i in range(len(result_label)):
+    for i in range(len(train_label)):
+        logger.d('len(train_label): %d, len(result_label):%d' % (len(train_label), len(result_label)))
         if result_label[i] == train_label[i]:
             count += 1
-    acc = len(result_label)
+    acc = count / len(result_label)
+    logger.i('acc: %4f' % acc)
+
     return acc

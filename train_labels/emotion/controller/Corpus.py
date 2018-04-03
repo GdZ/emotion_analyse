@@ -219,5 +219,6 @@ class Corpus:
 
     # training with bayes
     def train_bayes(self):
-        naive_bayes(self.train_file, self.label_file, self.test_file)
+        # naive_bayes(self.train_file, self.label_file, self.test_file)
+        naive_bayes(self.train_corpus, self.gold_labels, self.test_corpus)
         # to do: use evaluation
