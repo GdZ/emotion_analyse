@@ -20,7 +20,8 @@ from corpus import TRAIN_LABEL_CSV as TRAIN_LABEL_CSV
 from corpus import VECTOR_TRAIN_TXT as VECTOR_TRAIN_TXT
 from corpus import VECTOR_TEST_TXT as VECTOR_TEST_TXT
 # perception trained labels
-from corpus import LABELS_FILE_TXT as LABELS_FILE_TXT
+from corpus import LABELS_TEST_FILE_TXT as LABELS_TEST_FILE_TXT
+from corpus import LABELS_TRAIN_FILE_TXT as LABELS_TRAIN_FILE_TXT
 # emb
 from corpus import EMB_TRAIN_TXT as EMB_TRAIN_TXT
 from corpus import OUTPUT_FILE_MODEL as OUTPUT_FILE_MODEL
@@ -43,7 +44,7 @@ class Corpus:
         self.test_file = PROCESSING_TEST_TXT
         # marked labels file
         self.label_file = TRAIN_LABEL_CSV
-        # gold_labels is created by training labels text
+        # gold_labels is reading from train_label.csv
         self.gold_labels = []
         # no use
         self.predicted_labels = []
@@ -75,6 +76,7 @@ class Corpus:
     # later used in ....
     # """
     def read_train(self):  # different input
+        logger.i('[Corpus->read_train] read file: {}'.format(self.train_file))
         with io.open_file_mode(self.train_file, "r") as r:
             for line in r:
                 self.train_corpus.append(line)
@@ -122,26 +124,26 @@ class Corpus:
     # which are created by words bags
     # """
     def generate_vs_model(self):
-        logger.i('generate bag of word...')
+        logger.i('[corpus->generate_vs_model] generate bag of word...')
         word_list, vector_train = self.bag_of_word()
 
-        logger.i('write %s...' % WORD_LIST_TXT)
+        logger.i('[corpus->generate_vs_model] write %s...' % WORD_LIST_TXT)
         f = io.open_file_mode(WORD_LIST_TXT, "w")
         for (k, v) in word_list.items():
             f.write(str(k))
             f.write(" ")
             f.write(str(v))
             f.write('\n')
-        logger.i('write %s finished .......' % WORD_LIST_TXT)
+        logger.i('[corpus->generate_vs_model] write %s finished .......' % WORD_LIST_TXT)
 
-        logger.i('write %s...' % VECTOR_TRAIN_TXT)
+        logger.i('[corpus->generate_vs_model] write %s...' % VECTOR_TRAIN_TXT)
         io.write_file(VECTOR_TRAIN_TXT, vector_train)
-        logger.i('write %s finished .......' % VECTOR_TRAIN_TXT)
+        logger.i('[corpus->generate_vs_model] write %s finished .......' % VECTOR_TRAIN_TXT)
 
         vector_test = utils.make_test(word_list, self.test_corpus)
-        logger.i('write %s...' % VECTOR_TEST_TXT)
+        logger.i('[corpus->generate_vs_model] write %s...' % VECTOR_TEST_TXT)
         io.write_file(VECTOR_TEST_TXT, vector_test)
-        logger.i('write %s finished ......' % VECTOR_TEST_TXT)
+        logger.i('[corpus->generate_vs_model] write %s finished ......' % VECTOR_TEST_TXT)
 
         return word_list, vector_train
 
@@ -160,14 +162,14 @@ class Corpus:
         # store the vector of testing data
         vector_test = []
 
-        logger.d('file_word_list: %s' % type(file_word_list))
+        logger.d('[corpus->train_perception] file_word_list: %s' % type(file_word_list))
 
         for line in file_word_list:
             # logger.d('line: %s' % line)
             word_list.append(line.strip())
         # logger.d('word_list:\n%s' % word_list)
 
-        logger.i('read word list')
+        logger.i('[corpus->train_perception] read word list')
         for line in file_vector_train:
             vector_train.append(line.strip())
 
@@ -175,29 +177,37 @@ class Corpus:
         for line in file_vector_test:
             vector_test.append(line.strip())
 
-        logger.i('read vector text for train')
-        x, y, w = per.train(word_list, self.gold_labels, vector_train, iteration=20)
-        logger.d('[ps->train_perception] x:%d, y:%d, w:%d' % (len(x), len(y), len(w)))
+        logger.i('[corpus->train_perception] read vector text for train')
+        x_vec, y_gold, w = per.train(word_list, self.gold_labels, vector_train, iteration=20)
+        logger.i('[corpus->train_perception] training-> x:%d, y:%d, w:%d' % (len(x_vec), len(y_gold), len(w)))
 
         # create labels for training data
-        labels_train = per.generate_labels(x, w)
+        predict_labels = per.generate_labels(x_vec, w)
+        logger.i('[corpus->train_perception] x_vec: {}'.format(len(x_vec)))
+        logger.i('[corpus->train_perception] y_p: {}'.format(y_gold[:10]))
+        logger.i('[corpus->train_perception] labels_train: {}'.format(predict_labels[:10]))
+        logger.i('[corpus->train_perception] gold_labels: {}'.format(self.gold_labels[:10]))
         # checking correct percent of the training data
-        acc = per.check_accuracy(labels_train, y, w)
-        logger.i('[ps->train_perception] correct percent of the result: %.4f' % acc)
+        acc = per.check_accuracy(predict_labels, y_gold, w)
+        logger.i('[corpus->train_perception] correct percent of the result: %.4f' % acc)
 
         # ------------------------------------------------------------------
-        # training the label for test
-        x_t, y_t, w_t = per.train(word_list, self.gold_labels, vector_test, iteration=20)
-        logger.d('[ps->train_perception] x:%d, y:%d, w:%d' % (len(x_t), len(y_t), len(w_t)))
+        # predict the label for test
+        x_t, y_pt, w_t = per.train(word_list, self.gold_labels, vector_test, iteration=20)
+        logger.i('[corpus->train_perception] test -> x_t:{}, \n\t\ty_t:{}, \n\t\tw_t:{}'.format(len(x_t), y_pt[:10], w_t.shape))
 
-        # create labels for test
-        labels_test = per.generate_labels(x_t, w_t)
-        logger.d('labels_test(%d) = %d' % (len(labels_test), labels_test[0]))
+        # predict labels for test
+        pred_labels_test = per.generate_labels(x_t, w_t)
+        logger.i('[corpus->train_perception] labels_test = {} gold:{}'.format(pred_labels_test[:10], y_pt[:10]))
+
+        # check the accuracy
+        acc_t = per.check_accuracy(pred_labels_test, y_pt, w_t)
+        logger.i('[corpus->train_perception] test-> correct percent of the result: %.4f' % acc_t)
 
         # store labels for test to file
-        f_l = io.open_file_mode(LABELS_FILE_TXT, "w")
-        for l in labels_test:
-            l = l + 1;
+        f_l = io.open_file_mode(LABELS_TEST_FILE_TXT, "w")
+        for l in pred_labels_test:
+            # l = l + 1;
             logger.d('[corpus->train_perception] l:%d' % l)
             f_l.write(str(l))
             f_l.write('\n')
@@ -227,6 +237,8 @@ class Corpus:
         # 为什么这里用的是train_file文件路经，而不是文件内容
         # naive_bayes(self.train_file, self.label_file, self.test_file)
         # 使用文件内容以后，发现所有的概率均为0.0
+        logger.i('corpus: {}\ngold_labels: {}\ntest_corpus: {}'.format(
+                            self.train_corpus[:2], self.gold_labels[:10], self.test_corpus[:2]))
         naive_bayes(self.train_corpus, self.gold_labels, self.test_corpus)
         # to do: use evaluation
         # Emotion()

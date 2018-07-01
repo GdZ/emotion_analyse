@@ -1,9 +1,14 @@
 # coding: utf-8
 import numpy as np
+import matplotlib.pyplot as plt
 # release
 from utils import config
 from utils.logger import logger
 from utils.config import ORIGIN as ORIGIN
+from utils.config import DEBUG as DEBUG
+from utils.config import RELEASE as RELEASE
+# package
+from emotion.model.Evaluation import Emotion
 
 # ######################### load features & labels ######################
 if ORIGIN:
@@ -11,7 +16,11 @@ if ORIGIN:
     emotion = {'surprise': 0, 'anger': 1, 'happy': 2, 'love': 3, 'fear': 4, 'trust': 5, 'disgust': 6, 'sad': 7}
 else:
     # self defined
-    emotion = {'1':0, '2':1, '3':2, '4':3, '5':4, '6':5, '7':6, '8':7, '9':8, '10':9}
+    if RELEASE:
+        emotion = {'-5':0, '-4':1, '-3':2, '-2':3, '-1':4, '0':5, '1':6, '2':7, '3':8, '4':9, '5':10}
+        # emotion = {-5:0, -4:1, -3:2, -2:3, -1:4, 0:5, 1:6, 2:7, 3:8, 4:9, 5:10}
+    else:
+        emotion = {'1':0, '2':1, '3':2, '4':3, '5':4, '6':5, '7':6, '8':7, '9':8, '10':9}
 
 logger = logger(config)
 
@@ -85,6 +94,7 @@ def train(word_list, train_label, vector_text, iteration):
             if len(label) <= m:
                 logger.d('[ps->train] m is >= len(y)')
                 continue
+            logger.d('[ps->train] label:[{}]: {}\nemotion: {}'.format(m, label, emotion))
             y_gold_str = label[m]
             y_gold = emotion[y_gold_str]
             y_pre = matrix_dot(vector[m], weight)
@@ -127,18 +137,27 @@ def generate_labels(x, w):
 # ######################## perception with sparse matrix(check_accuracy) #################
 def check_accuracy(trained_labels, gold_labels, w):
     correct_num = 0
-    logger.i('[ps->check_accuracy] pre_labels:%d, y:%d, w:%d' % (len(trained_labels), len(gold_labels), len(w)))
+    logger.i('[Perception->check_accuracy] pre_labels:%d, y:%d, w:%d' % (len(trained_labels), len(gold_labels), len(w)))
 
     y_gold = list(gold_labels)
     for i in range(len(y_gold)):
         if emotion[y_gold[i]] == trained_labels[i]:
             correct_num += 1
         else:
-            logger.d('emotion[y_gold[%d]=%s]=%s and y_pre[%d]=%s'
-                     % (i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
+            logger.i('[Perception->check_accuracy] emotion[y_gold[{}]={}]={} and y_pre[{}]={}'.format(
+                                i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
     # calculate the accuracy
     accuracy = (correct_num + 0.0) / len(y_gold) * 100.0
-    logger.d('[Perception->check_accuracy] correct_num:%d, y_gold:%d = %f'
-             % (correct_num, len(y_gold), accuracy))
+    logger.d('[Perception->check_accuracy] correct_num:{}, y_gold:{} = {}'
+             .format(correct_num, len(y_gold), accuracy))
+
+    logger.i('[Perception->check_accuracy] y_gold: {}, labels: {}'.format(len(y_gold), len(trained_labels)))
+    # fig = plt.figure()
+    # plt.plot(y_gold, trained_labels, 'r.')
+    # plt.show()
+    logger.i('[Perception->check_accuracy] y:{}, y_hat:{}, emotion:{}'.format(gold_labels[0], trained_labels[0], emotion))
+    evaluation = Emotion(gold_labels, trained_labels, emotion)
+    evaluation.evaluation()
+    evaluation.print_result()
 
     return accuracy
