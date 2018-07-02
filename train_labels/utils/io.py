@@ -39,6 +39,7 @@ def write_file(path, contents):
                     .replace(u' ü ', u'ü')
                     .replace(u' ß ', u'ß'))
             f.write('\n')
+    f.close()
 
 
 def read_stop_word(stop_word_file):

@@ -10,8 +10,9 @@ from utils.logger import logger
 
 logger = logger(config)
 
+
 class Emotion:
-    def __init__(self, list_gold, list_prediction, emotion):
+    def __init__(self, y_labels, y_predict, emotion):
         self.emotion = emotion
         self.tp = 0
         self.tn = 0
@@ -21,19 +22,19 @@ class Emotion:
         self.precision = 0
         self.recall = 0
         self.F1 = 0
-        self.list_gold = list_gold
-        self.list_prediction = list_prediction
+        self.gold_labels = y_labels
+        self.predictions = y_predict
 
     def evaluation(self):
         keys = list(self.emotion.keys())
         values = list(self.emotion.values())
-        for i in range(len(self.list_gold)):
+        for i in range(min(len(self.gold_labels), len(self.predictions))):
             # logger.i('[Evaluation->evaluation] i:{} gold: {}, prediction[i]: {}, \nemotion:{}'.format(i, self.list_gold[i], self.list_prediction[i], self.emotion))
-            if self.list_gold[i] in keys and self.emotion[self.list_gold[i]] == self.list_prediction[i]:
+            if self.gold_labels[i] in keys and self.emotion[self.gold_labels[i]] == self.predictions[i]:
                 self.tp += 1
-            elif self.list_prediction[i] == values[keys.index(self.list_gold[i])] and self.list_gold[i] not in keys:
+            elif self.predictions[i] == values[keys.index(self.gold_labels[i])] and self.gold_labels[i] not in keys:
                 self.fp += 1
-            elif self.list_gold[i] in self.emotion.keys() and self.list_prediction[i] != values[keys.index(self.list_gold[i])]:
+            elif self.gold_labels[i] in self.emotion.keys() and self.predictions[i] != values[keys.index(self.gold_labels[i])]:
                 self.fn += 1
             else:
                 self.tn += 1

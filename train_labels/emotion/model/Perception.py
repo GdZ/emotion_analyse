@@ -54,10 +54,12 @@ def parse(word_list, train_label, vector_text):
 
     # delete label of null string
     labels = [labels[i] for i in range(len(labels)) if labels[i] != 'null']
+    y = [emotion[labels[i]] for i in range(len(labels)) if labels[i] != 'null']
     labels = np.array(labels[0: count])
+    y = np.array(y[0: count])
     logger.i('[Perception->parse] vectors:%d, labels:%d' % (len(vectors), len(labels)))
 
-    return vectors, labels, feature_num, emotion_num
+    return vectors, labels, feature_num, emotion_num, y
 
 
 # ######################## perception with sparse matrix(train) ################
@@ -82,7 +84,7 @@ def mod_weight(vector, weight, y_gold, y_pre):
 
 
 def train(word_list, train_label, vector_text, iteration):
-    vector, label, feature_num, emotion_num = parse(word_list, train_label, vector_text)
+    vector, label, feature_num, emotion_num, y = parse(word_list, train_label, vector_text)
     logger.d("[ps->train] len(vectors):%d, len(y):%d, feature_num:%d, emotion_num:%d" \
              % (len(vector), len(label), feature_num, emotion_num))
 
@@ -111,7 +113,7 @@ def train(word_list, train_label, vector_text, iteration):
             if y_pre != y_gold:
                 weight = mod_weight(vector[m], weight, y_gold, y_pre)
 
-    return vector, label, weight
+    return vector, label, weight, y
 
 
 # generate labels by vectors and weights
@@ -133,31 +135,38 @@ def generate_labels(x, w):
 
     return labels
 
+def value_labels(val):
+    labels = []
+    keys = emotion.keys()
+    values = emotion.values()
+    for vv in val:
+        labels.append(keys[values.index(vv)])
+    return labels
 
 # ######################## perception with sparse matrix(check_accuracy) #################
 def check_accuracy(trained_labels, gold_labels, w):
-    correct_num = 0
-    logger.i('[Perception->check_accuracy] pre_labels:%d, y:%d, w:%d' % (len(trained_labels), len(gold_labels), len(w)))
-
-    y_gold = list(gold_labels)
-    for i in range(len(y_gold)):
-        if emotion[y_gold[i]] == trained_labels[i]:
-            correct_num += 1
-        else:
-            logger.i('[Perception->check_accuracy] emotion[y_gold[{}]={}]={} and y_pre[{}]={}'.format(
-                                i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
-    # calculate the accuracy
-    accuracy = (correct_num + 0.0) / len(y_gold) * 100.0
-    logger.d('[Perception->check_accuracy] correct_num:{}, y_gold:{} = {}'
-             .format(correct_num, len(y_gold), accuracy))
-
-    logger.i('[Perception->check_accuracy] y_gold: {}, labels: {}'.format(len(y_gold), len(trained_labels)))
+    # correct_num = 0
+    # logger.i('[Perception->check_accuracy] pre_labels:%d, y:%d, w:%d' % (len(trained_labels), len(gold_labels), len(w)))
+    #
+    # y_gold = list(gold_labels)
+    # for i in range(len(y_gold)):
+    #     if emotion[y_gold[i]] == trained_labels[i]:
+    #         correct_num += 1
+    #     else:
+    #         logger.i('[Perception->check_accuracy] emotion[y_gold[{}]={}]={} and y_pre[{}]={}'.format(
+    #                             i, y_gold[i], emotion[y_gold[i]], i, trained_labels[i]))
+    # # calculate the accuracy
+    # accuracy = (correct_num + 0.0) / len(y_gold) * 100.0
+    # logger.d('[Perception->check_accuracy] correct_num:{}, y_gold:{} = {}'
+    #          .format(correct_num, len(y_gold), accuracy))
+    # logger.i('[Perception->check_accuracy] y_gold: {}, labels: {}'.format(len(y_gold), len(trained_labels)))
     # fig = plt.figure()
     # plt.plot(y_gold, trained_labels, 'r.')
     # plt.show()
-    logger.i('[Perception->check_accuracy] y:{}, y_hat:{}, emotion:{}'.format(gold_labels[0], trained_labels[0], emotion))
+    logger.i('[Perception->check_accuracy] gold_labels:{}'.format(gold_labels[:10]))
+    logger.i('[Perception->check_accuracy] trained_labels:{}'.format(trained_labels[:10]))
+    logger.i('[Perception->check_accuracy] emotion:{}'.format(emotion))
     evaluation = Emotion(gold_labels, trained_labels, emotion)
     evaluation.evaluation()
     evaluation.print_result()
-
-    return accuracy
+    # return accuracy
