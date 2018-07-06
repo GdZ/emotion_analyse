@@ -14,19 +14,19 @@ class logger:
 
     def d(self, msg):
         if self.debug:
-            print("[debug] %s %s" % (time.time(), msg))
+            print("[debug] {:.2f} {}".format(time.time(), msg))
         else:
             pass
 
     def i(self, msg):
         if self.info:
-            print("[info] %s %s" % (time.time(), msg))
+            print("[info] {:.02f} {}".format(time.time(), msg))
         else:
             pass
 
     def w(self, msg):
         if self.warn:
-            print("[warn] %s %s" % (time.time(), msg))
+            print("[warn] {:.02f} {}".format(time.time(), msg))
         else:
             pass
 

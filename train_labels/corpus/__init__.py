@@ -2,7 +2,6 @@
 from utils.config import RELEASE as RELEASE
 from utils.config import ORIGIN as ORIGIN
 
-
 # prepare
 TRAIN_CONTEXT_IDX = 5
 SPLIT_STR = ';'
@@ -11,19 +10,20 @@ TRAIN_FILE_NAME = 'train.csv'
 TEST_FILE_NAME = 'test.csv'
 BAYES_TRAIN_FILE_NAME = 'test_all.csv'
 
+CORPUS_DIR = './corpus/'
 # setting for debug
 if RELEASE:
-    ROOT_PATH = './corpus/release/'
+    ROOT_PATH = CORPUS_DIR + 'release/'
 
 elif ORIGIN:
-    ROOT_PATH = './corpus/old/'
+    ROOT_PATH = CORPUS_DIR + 'old/'
     TRAIN_CONTEXT_IDX = 1
     SPLIT_STR = ' '
     TRAIN_FILE_NAME = 'train_c.csv'
     TEST_FILE_NAME = 'train_c.csv'
 
 else:
-    ROOT_PATH = './corpus/debug/'
+    ROOT_PATH = CORPUS_DIR + 'debug/'
 
 # release data
 TRAIN_CSV = ROOT_PATH + TRAIN_FILE_NAME
@@ -51,7 +51,9 @@ STOP_WORD_TXT = ROOT_PATH + STOP_LIST_FILE_NAME
 
 # training
 TRAIN_LABEL_FILE_NAME = 'train_label.csv'
+TEST_LABEL_FILE_NAME = 'test_label.csv'
 TRAIN_LABEL_CSV = ROOT_PATH + TRAIN_LABEL_FILE_NAME
+TEST_LABEL_CSV = ROOT_PATH + TEST_LABEL_FILE_NAME
 BAYES_TRAIN_LABEL_FILE_NAME = 'labels_bayes.csv'
 BAYES_TRAIN_LABEL_CSV = ROOT_PATH + BAYES_TRAIN_LABEL_FILE_NAME
 
@@ -75,3 +77,6 @@ EMB_FILE_NAME = 'emb_train.txt'
 MODEL_FILE_NAME = 'model'
 EMB_TRAIN_TXT = ROOT_PATH + EMB_FILE_NAME
 OUTPUT_FILE_MODEL = ROOT_PATH + MODEL_FILE_NAME
+
+# analyze
+MARKED_ANALYZE_FILE = CORPUS_DIR + 'result/marked.csv'

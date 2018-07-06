@@ -53,5 +53,8 @@ class Emotion:
             self.F1 = 2. * self.precision * self.recall / (self.precision + self.recall)
 
     def print_result(self):
-        logger.i("[Evaluation->print_result] | {0:8} | {1:9.2f} | {2:6.2f} | {3:8.2f} | {4:8.2f} |".format(
+        logger.i("[Evaluation->print_result]\n"
+                 "| {0:8} |\n"
+                 "| \tprecision | \trecall | \taccuracy |     \t  F1 |\n"
+                 "| \t{1:9.2f} | \t{2:6.2f} | \t{3:8.2f} | \t{4:8.2f} |".format(
             self.emotion, self.precision, self.recall, self.accuracy, self.F1))

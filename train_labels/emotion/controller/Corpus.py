@@ -19,6 +19,7 @@ from corpus import PROCESSING_TEST_TXT as PROCESSING_TEST_TXT
 from corpus import BAYES_PROCESSING_TRAIN_TXT as BAYES_PROCESSING_TRAIN_TXT
 from corpus import BAYES_PROCESSING_TEST_TXT as BAYES_PROCESSING_TEST_TXT
 from corpus import TRAIN_LABEL_CSV as TRAIN_LABEL_CSV
+from corpus import TEST_LABEL_CSV as TEST_LABEL_CSV
 from corpus import BAYES_TRAIN_LABEL_CSV as BAYES_TRAIN_LABEL_CSV
 from corpus import VECTOR_TRAIN_TXT as VECTOR_TRAIN_TXT
 from corpus import VECTOR_TEST_TXT as VECTOR_TEST_TXT
@@ -48,16 +49,17 @@ class Corpus:
             # prepared check_accuracy text
             self.test_file = PROCESSING_TEST_TXT
             # marked labels file
-            self.label_file = TRAIN_LABEL_CSV
+            self.label_train_file = TRAIN_LABEL_CSV
+            self.label_test_file = TEST_LABEL_CSV
         else:
             # bayes
             self.train_file = BAYES_PROCESSING_TRAIN_TXT
             self.test_file = BAYES_PROCESSING_TEST_TXT
             # marked labels file
-            self.label_file = BAYES_TRAIN_LABEL_CSV
+            self.label_train_file = BAYES_TRAIN_LABEL_CSV
         # gold_labels is reading from train_label.csv
-        self.gold_labels = []
-        self.test_labels = []
+        self.train_gold_labels = []
+        self.test_gold_labels = []
         # no use
         self.predicted_labels = []
         # no use
@@ -76,12 +78,16 @@ class Corpus:
     # read data from marked label file, and create the gold labels
     # """
     def read_label(self):
-        file_handle = io.open_file(self.label_file)
+        file_handle = io.open_file(self.label_train_file)
         for line in file_handle:
-            self.gold_labels.append(line.strip())
+            self.train_gold_labels.append(line.strip())
         if 0 != self.bayes:
-            self.test_labels = self.gold_labels[len(self.gold_labels)*2/3:]
-            self.gold_labels = self.gold_labels[:len(self.gold_labels)*2/3]
+            self.test_gold_labels = self.train_gold_labels[len(self.train_gold_labels) * 2 / 3:]
+            self.train_gold_labels = self.train_gold_labels[:len(self.train_gold_labels) * 2 / 3]
+        else:
+            test_handle = io.open_file(self.label_test_file)
+            for line in test_handle:
+                self.test_gold_labels.append(line.strip())
         logger.i('[Corpus->read_label] read label successfully')
         # return self.gold_labels, self.test_labels
 
@@ -194,8 +200,8 @@ class Corpus:
 
         logger.i('[corpus->train_perception] read vector text for train')
         logger.i('[corpus->train_perception] word_list:{}, gold_labels:{}, vector_train:{}'.format(
-                                            len(word_list), len(self.gold_labels), len(vector_train)))
-        x_vec, y_labels, w, y = per.train(word_list, self.gold_labels, vector_train, iteration=20)
+                                            len(word_list), len(self.train_gold_labels), len(vector_train)))
+        x_vec, y_labels, w, y = per.train(word_list, self.train_gold_labels, vector_train, iteration=20)
         logger.i('[corpus->train_perception] x_vec:{}, y_labels:{}, w:{}, y:{}'.format(len(x_vec), len(y_labels), len(w), len(y)))
 
         # create labels for training data
@@ -203,13 +209,22 @@ class Corpus:
         logger.i('[corpus->train_perception] x_vec: {}'.format(len(x_vec)))
         logger.i('[corpus->train_perception] y_labels: {}'.format(y_labels[:10]))
         logger.i('[corpus->train_perception] y_predict: {}'.format(y_predict[:10]))
-        logger.i('[corpus->train_perception] y_gold_labels: {}'.format(self.gold_labels[:10]))
+        logger.i('[corpus->train_perception] y_gold_labels: {}'.format(self.train_gold_labels[:10]))
         # checking correct percent of the training data
         per.check_accuracy(y_predict, y_labels, w)
+        # store labels for test to file
+        f_l = io.open_file_mode(LABELS_TRAIN_FILE_TXT, "w")
+        # for l in yt_predict:
+        for l in per.value_labels(y_predict):
+            # l = l + 1;
+            logger.d('[corpus->train_perception] l:{}'.format(l))
+            f_l.write(str(l))
+            f_l.write('\n')
+        f_l.close()
 
         # ------------------------------------------------------------------
         # predict the label for test
-        xt, yt_labels, wt, yt = per.train(word_list, self.gold_labels, vector_test, iteration=20)
+        xt, yt_labels, wt, yt = per.train(word_list, self.train_gold_labels, vector_test, iteration=20)
         logger.i('[corpus->train_perception] xt:{}, \n\t\tyt_labels:{}, \n\t\twt:{}'.format(len(xt), yt_labels[:10], wt.shape))
 
         # predict labels for test
@@ -219,7 +234,8 @@ class Corpus:
         logger.i('[corpus->train_perception] yt_gold_labels:{}'.format(yt_labels[:10]))
 
         # check the accuracy
-        per.check_accuracy(yt_predict, yt_labels, wt)
+        # per.check_accuracy(yt_predict, yt_labels, wt)
+        per.check_accuracy(yt_predict, self.test_gold_labels, wt)
 
         # store labels for test to file
         f_l = io.open_file_mode(LABELS_TEST_FILE_TXT, "w")
@@ -257,8 +273,8 @@ class Corpus:
         # naive_bayes(self.train_file, self.label_file, self.test_file)
         # 使用文件内容以后，发现所有的概率均为0.0
         logger.d('[corpus->train_bayes] train_corpus: {}\n\t\tgold_labels: {}\ntest_corpus: {}'.format(
-                            self.train_corpus[:2], self.gold_labels[:10], self.test_corpus[:2]))
-        yt_predict_labels = naive_bayes(self.train_corpus, self.gold_labels, self.test_corpus)
+                            self.train_corpus[:2], self.train_gold_labels[:10], self.test_corpus[:2]))
+        yt_predict_labels = naive_bayes(self.train_corpus, self.train_gold_labels, self.test_corpus)
         # store labels for test to file
         f_l = io.open_file_mode(BAYES_LABELS_TEST_FILE_TXT, "w")
         # for l in yt_predict:

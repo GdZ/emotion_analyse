@@ -3,6 +3,8 @@
 from utils import io
 from emotion.utils import pre_processing as pp
 from emotion.controller.Corpus import Corpus
+# result
+from result.Analyse import Analyze
 # const variable
 from corpus import TRAIN_CSV as TRAIN_CSV
 from corpus import TEST_CSV as TEST_CSV
@@ -54,12 +56,11 @@ def prepare(ch=1):
     logger.i('delete stop words')
     for twitter in contents:
         logger.d('twitter: ' + twitter)
-        tweet_tokens = pp.preprocess(twitter)
+        tweet_tokens = pp.preprocess(twitter, lowercase=True)
         tweet_tokens_final = []
         for token in tweet_tokens:
             if token in stop_words:
                 logger.d('[emotion_task->prepare] token: {0}'.format(token))
-                pass
             else:
                 tweet_tokens_final.append(token)
         pre_processed.append(tweet_tokens_final)
@@ -104,7 +105,6 @@ def training(option='perception'):
     elif 'emb' == option:
         logger.i("training by use emb....")
         train_corpus.embedding()
-
     else:
         logger.i("do nothing.....")
 
@@ -121,6 +121,7 @@ def main():
             "5. training with perception\n"
             "6. training with bayes\n"
             "7. training with emb\n"
+            "8. analyze\n"
             "0. exit\n"
             "---------------------------------\n")
     ch = input(menu)
@@ -139,6 +140,9 @@ def main():
     elif 7 == ch:
         option = 'emb'
         training(option)
+    elif 8 == ch:
+        analyze = Analyze()
+        analyze.task()
     elif 0 == ch:
         exit(0)
 
