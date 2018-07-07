@@ -4,6 +4,8 @@ this file contain some method to deal with different framework to create corpus 
 """
 import gensim
 import pickle
+import numpy as np
+
 # utils
 from utils import io
 # emotion package
@@ -21,6 +23,7 @@ from corpus import BAYES_PROCESSING_TEST_TXT as BAYES_PROCESSING_TEST_TXT
 from corpus import TRAIN_LABEL_CSV as TRAIN_LABEL_CSV
 from corpus import TEST_LABEL_CSV as TEST_LABEL_CSV
 from corpus import BAYES_TRAIN_LABEL_CSV as BAYES_TRAIN_LABEL_CSV
+from corpus import BAYES_TEST_LABEL_CSV as BAYES_TEST_LABEL_CSV
 from corpus import VECTOR_TRAIN_TXT as VECTOR_TRAIN_TXT
 from corpus import VECTOR_TEST_TXT as VECTOR_TEST_TXT
 # perception trained labels
@@ -57,6 +60,7 @@ class Corpus:
             self.test_file = BAYES_PROCESSING_TEST_TXT
             # marked labels file
             self.label_train_file = BAYES_TRAIN_LABEL_CSV
+            self.label_test_file = BAYES_TEST_LABEL_CSV
         # gold_labels is reading from train_label.csv
         self.train_gold_labels = []
         self.test_gold_labels = []
@@ -81,13 +85,13 @@ class Corpus:
         file_handle = io.open_file(self.label_train_file)
         for line in file_handle:
             self.train_gold_labels.append(line.strip())
-        if 0 != self.bayes:
-            self.test_gold_labels = self.train_gold_labels[len(self.train_gold_labels) * 2 / 3:]
-            self.train_gold_labels = self.train_gold_labels[:len(self.train_gold_labels) * 2 / 3]
-        else:
-            test_handle = io.open_file(self.label_test_file)
-            for line in test_handle:
-                self.test_gold_labels.append(line.strip())
+        # if 0 != self.bayes:
+        #     self.test_gold_labels = self.train_gold_labels[len(self.train_gold_labels) * 2 / 3:]
+        #     self.train_gold_labels = self.train_gold_labels[:len(self.train_gold_labels) * 2 / 3]
+        # else:
+        test_handle = io.open_file(self.label_test_file)
+        for line in test_handle:
+            self.test_gold_labels.append(line.strip())
         logger.i('[Corpus->read_label] read label successfully')
         # return self.gold_labels, self.test_labels
 
@@ -272,9 +276,10 @@ class Corpus:
         # 为什么这里用的是train_file文件路经，而不是文件内容
         # naive_bayes(self.train_file, self.label_file, self.test_file)
         # 使用文件内容以后，发现所有的概率均为0.0
-        logger.d('[corpus->train_bayes] train_corpus: {}\n\t\tgold_labels: {}\ntest_corpus: {}'.format(
-                            self.train_corpus[:2], self.train_gold_labels[:10], self.test_corpus[:2]))
+        logger.i('[corpus->train_bayes] train_corpus: {}\n\t\tgold_labels: {}\n\t\ttest_corpus: {}'.format(
+                            len(self.train_corpus[:2]), len(self.train_gold_labels), len(self.test_corpus)))
         yt_predict_labels = naive_bayes(self.train_corpus, self.train_gold_labels, self.test_corpus)
+
         # store labels for test to file
         f_l = io.open_file_mode(BAYES_LABELS_TEST_FILE_TXT, "w")
         # for l in yt_predict:

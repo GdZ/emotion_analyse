@@ -9,5 +9,7 @@
 # data
 *.csv
 *.txt
-
+*.png
+*.jpg
+*.npy
 

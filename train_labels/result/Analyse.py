@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from scipy.stats import stats
+import matplotlib.mlab as mlab
+
 # word cloud
 from os import path
 from PIL import Image
@@ -10,6 +11,7 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 # self define
 from result import *
+from utils import io
 # data root folder
 from corpus import LABELS_TEST_FILE_TXT as label_test_csv
 from corpus import LABELS_TRAIN_FILE_TXT as label_train_csv
@@ -17,87 +19,63 @@ from corpus import MARKED_ANALYZE_FILE as marked_csv
 from corpus import TRAIN_LABEL_CSV as train_label_csv
 from corpus import TEST_LABEL_CSV as test_label_csv
 from corpus import STOP_WORD_TXT as stop_word_txt
+from corpus import BAYES_TRAIN_LABEL_CSV as bayes_train_csv
+from corpus import BAYES_LABELS_TEST_FILE_TXT as bayes_test_csv
+
 # preprocess data
 from corpus import PROCESSING_TRAIN_TXT as processing_train_txt
 from corpus import BAYES_PROCESSING_TRAIN_TXT as bayes_processing_train_txt
 # release
 from utils.logger import logger
 from utils import config
+from emotion.model.Tweet import Item
+from emotion.model.Tweet import Tweet
+from emotion.model.Labels import Label
+from emotion.model.Patient import Patient
 
-class Analyze():
+
+class Analyze(Item):
     # const global variables
-    F_ID = 0                                # ID
-    F_USER_ID = F_ID + 1                    # user_id
-    F_TYPE = F_USER_ID + 1                  # type
-    F_SENTIMENTLABEL = F_TYPE + 1           # Sentiment label
-    F_LABELSVALUE = F_SENTIMENTLABEL + 1    # labels value
-    F_USERNAMETWEET = F_LABELSVALUE + 1     # usernameTweet
-    F_TEXT = F_USERNAMETWEET + 1            # text
-    F_IS_REPLY = F_TEXT + 1                 # is_reply
-    F_IS_RETWEET = F_IS_REPLY + 1           # is_retweet
-    F_NR_FAVOR = F_IS_RETWEET + 1           # nbr_favorite
-    F_NR_REPLY = F_NR_FAVOR + 1             # nbr_reply
-    F_NR_RETWEET = F_NR_REPLY + 1           # nbr_retweet
-    F_DATE = F_NR_RETWEET + 1               # date
-    F_TIME = F_DATE + 1                     # time
-    F_HAS_MEDIA = F_TIME + 1                # has_media
-    F_MEDIAS0 = F_HAS_MEDIA + 1             # medias.0
-    F_URL = F_MEDIAS0 + 1                   # url
+    tweets = []
 
     def __init__(self):
         self.logger = logger(config)
-        self.logger.i('__init__')
+        self.logger.i('{} -> __init__'.format(self))
         # *****************************************************************
         # 3.1.*
         # import data from csv
-        fd = pd.read_csv(marked_csv, sep=';')
-        # format
-        self.data = fd.values
-        self.ids = self.data[:, F_ID]
-        self.uids = self.data[:, F_USER_ID]
-        self.types = self.data[:, F_TYPE]
-        self.sentiments = self.data[:, F_SENTIMENTLABEL]
-        self.labels = self.data[:, F_LABELSVALUE]
-        self.unames = self.data[:, F_USERNAMETWEET]
-        self.texts = self.data[:, F_TEXT]
-        self.is_reply = self.data[:, F_IS_REPLY]
-        self.is_retweet = self.data[:, F_IS_RETWEET]
-        self.nr_favor = self.data[:, F_NR_FAVOR]
-        self.nr_reply = self.data[:, F_NR_REPLY]
-        self.nr_retweet = self.data[:, F_NR_RETWEET]
-        self.dates = self.data[:, F_DATE]
-        self.times = self.data[:, F_TIME]
-        self.medias = self.data[:, F_HAS_MEDIA]
-        self.media0 = self.data[:, F_MEDIAS0]
-        self.urls = self.data[:, F_URL]
-        self.fig = []; # plt.figure(figsize=(16,9))
+        self.tweets = Tweet(pd.read_csv(marked_csv, sep=';').values)
+        self.tweets.keyword = ['feinstaub','feintaubalarm','vvs','kamine','kaminoefen','komfort','komfortkamine','moovel']
+        # self.pdf = self.tweets.get_pdf()
+        # self.cdf = np.zeros((np.size(self.tweets.get_x()), self.tweets.SIZE))
+        self.x = self.tweets.x
+        self.pdf = self.tweets.get_pdf()
+        self.cdf = self.tweets.get_cdf()
+        # save data to npy
+        # np.save('tweets.npy', self.tweets)
+        io.save('tweets.pkl', self.tweets)
+        # t = io.load('tweets.pkl')
+        # self.logger.i('tweets: {},\nt: {}'.format(self.tweets.pdf[:5], t.pdf[:5]))
+        # fig
+        self.fig = [] # plt.figure(figsize=(16,9))
         # *****************************************************************
-        # 3.3.*
-        # self.label_train = pd.read_csv(label_train_csv, sep=';').values
-        # self.label_test = pd.read_csv(label_test_csv, sep=';').values
-        # self.gold_train = pd.read_csv(train_label_csv, sep=';').values
-        # self.gold_test = pd.read_csv(test_label_csv, sep=';').values
-        self.label_train = pd.read_csv(label_train_csv).values
-        self.label_test = pd.read_csv(label_test_csv).values
-        self.gold_train = pd.read_csv(train_label_csv).values
-        self.gold_test = pd.read_csv(test_label_csv).values
+        # labels
+        self.label_train = Label(pd.read_csv(label_train_csv).values)
+        self.label_test = Label(pd.read_csv(label_test_csv).values)
+        self.gold_train = Label(pd.read_csv(train_label_csv).values)
+        self.gold_test = Label(pd.read_csv(test_label_csv).values)
+        # bayes
+        self.bayes_train = Label(pd.read_csv(bayes_train_csv).values)
+        self.bayes_test = Label(pd.read_csv(bayes_test_csv).values)
+        # texts
         self.process_train_txt = pd.read_csv(processing_train_txt).values
         self.bayes_processing_train_txt = pd.read_csv(bayes_processing_train_txt).values
         self.stop_word_list = pd.read_csv(stop_word_txt).values
-        self.xDate = np.unique(self.dates)
-        # print(xDate)
-        # count
-        self.pdf = np.zeros((np.size(self.xDate), 17))
-        self.cdf = np.zeros((np.size(self.xDate), 17))
-        print('y1: {}'.format(self.pdf.shape))
-        for i, d in enumerate(self.xDate):
-            for j, days in enumerate(self.dates):
-                if d == days:
-                    self.pdf[i][self.F_DATE] += 1
-                    self.pdf[i][self.F_NR_FAVOR] += self.nr_favor[j]
-                    self.pdf[i][self.F_NR_REPLY] += self.nr_reply[j]
-                    self.pdf[i][self.F_NR_RETWEET] += self.nr_retweet[j]
-                    self.pdf[i][self.F_LABELSVALUE] += self.labels[j]
+
+    def load(self):
+        self.tweets = io.load('tweets.pkl')
+        # self.patients = io.load('3.2.1.patients.pkl')
+        # self.logger.i(self.patients.get('patients'))
 
     def _3_1(self):
         """
@@ -106,21 +84,25 @@ class Analyze():
         """
         self.logger.i('_3_1()')
         # print('{}'.format(dates))
-        x = self.xDate
+        x = self.x
         pdf = self.pdf
 
         # 日期-数量
         self.fig = plt.figure(figsize=(16,9))
-        self.draw(x, pdf[:,self.F_DATE], 'r-x', title='date-count of tweets',
-                  xlabel='Date(days)', ylabel='count of tweet everyday')
+        self.draw(x, pdf[:,self.F_DATE], 'r-x',
+                  title='date-count of tweets',
+                  xlabel='Date(days)',
+                  ylabel='count of tweet everyday')
         self.fig.savefig('3.1.a01.png', format='png')
 
         # 日期-count(like, retweet, favor)
         self.fig = plt.figure(figsize=(16,9))
         self.draw(x, pdf[:,F_NR_FAVOR], shape='r.-')
         self.draw(x, pdf[:,F_NR_REPLY], shape='b.-')
-        self.draw(x, pdf[:,F_NR_RETWEET], shape='g.-', title='date-count of tweets',
-                  xlabel='Date(days)', ylabel='count of tweet everyday',
+        self.draw(x, pdf[:,F_NR_RETWEET], shape='g.-',
+                  title='date-count of tweets',
+                  xlabel='Date(days)',
+                  ylabel='count of tweet everyday',
                   lengend=['count of favor from all tweets in one day',
                            'count of reply from all tweets in one day',
                            'count of retweet from all tweets in one day'])
@@ -130,52 +112,27 @@ class Analyze():
         self.fig = plt.figure(figsize=(16,9))
         self.draw(x, pdf[:, F_LABELSVALUE]/pdf[:, F_DATE], shape='r-*',
                   title='date-labels of tweets',
-                  xlabel='Date(days)', ylabel='average of labels in everyday')
+                  xlabel='Date(days)',
+                  ylabel='average of labels in everyday')
         self.fig.savefig('3.1.a03.png', format='png')
-        plt.show()
+        # plt.show()
 
     def _3_1_1(self):
         """
         - 日期-不同话题
-            - feinstaub
-            - feintaubalarm
-            - vvs
-            - kamine
-            - kaminoefen
-            - komfort
-            - komfortkamine
-            - moovel
         :return:
         """
         self.logger.i('_3_1_1')
-        texts = self.texts
+        texts = self.tweets.texts
+        keywords = self.tweets.keyword
         self.fig = plt.figure(figsize=(16,9))
-        x,y = self.keyword_count('feinstaub', texts)
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('feinstaubalarm', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('vvs', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('kamine', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('kaminoefen', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('komfort', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('komfortkamine', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        x,y = self.keyword_count('moovel', texts)
-        # fig = plt.figure(figsize=(16,9))
-        plt.plot(x, y, '.-')
-        plt.legend(['feinstaub','feintaubalarm','vvs','kamine','kaminoefen','komfort','komfortkamine','moovel'])
+        for i, k in enumerate(keywords):
+            x,y = self.keyword_count(k, texts)
+            plt.plot(x, y, '.-')
+            plt.legend(keywords)
+            io.save('3.1.1.{}.x_y.pkl'.format(i), [x,y])
         self.fig.savefig('3.1.1.a01.png', format='png')
-        plt.show()
+        # plt.show()
         self.logger.i('_3_1_1 -> finished')
 
     def keyword_count(self, keywords, tweets):
@@ -184,7 +141,7 @@ class Analyze():
         for i, line in enumerate(tweets):
             for k in keywords:
                 if k in line.lower():
-                    feinstaub.append([self.dates[i], line]);
+                    feinstaub.append([self.tweets.dates[i], line])
 
         feinstaub = np.asarray(feinstaub)
         x = np.unique(feinstaub[:,0])
@@ -192,7 +149,7 @@ class Analyze():
         for i, d in  enumerate(x):
             for j, days in enumerate(feinstaub[:,0]):
                 if d == days:
-                    y[i] += 1;
+                    y[i] += 1
         self.logger.i('keyword_count -> finished')
         return x,y
 
@@ -207,36 +164,6 @@ class Analyze():
         """
         推文显著关键词联想图标
         :return:
-        """
-        # from wordcloud import WordCloud
-        # self.logger.i()
-        # return ;
-        # wordcloud = WordCloud(
-        #     background_color="white",
-        #     width=1000,
-        #     height=860,
-        #     margin=2
-        # ).generate(str(list(self.bayes_processing_train_txt)))
-        # # width,height,margin可以设置图片属性
-        # # generate 可以对全部文本进行自动分词,但是他对中文支持不好,对中文的分词处理请看我的下一篇文章
-        # # wordcloud = WordCloud(font_path = r'D:\Fonts\simkai.ttf').generate(f)
-        # # 你可以通过font_path参数来设置字体集
-        # # background_color参数为设置背景颜色,默认颜色为黑色
-        # plt.imshow(wordcloud)
-        # plt.axis("off")
-        # plt.show()
-        # 保存图片,但是在第三模块的例子中 图片大小将会按照 mask 保存
-        """
-        Image-colored wordcloud
-        =======================
-        
-        You can color a word-cloud by using an image-based coloring strategy
-        implemented in ImageColorGenerator. It uses the average color of the region
-        occupied by the word in a source image. You can combine this with masking -
-        pure-white will be interpreted as 'don't occupy' by the WordCloud object when
-        passed as mask.
-        If you want white as a legal color, you can just pass a different image to
-        "mask", but make sure the image shapes line up.
         """
         d = path.dirname(__file__)
         # https://arbeitsschutz-schweissen.de/blog/wp-content/uploads/2015/09/Feinstaub.jpg
@@ -280,7 +207,7 @@ class Analyze():
         plt.imshow(wc, interpolation="bilinear")
         plt.axis("off")
         wc.to_file('3.1.3.a01.png')
-        plt.show()
+        # plt.show()
 
     def _3_2(self):
         """
@@ -288,15 +215,18 @@ class Analyze():
         每日推文：favor + reply + retweet
         :return:
         """
-        x = self.xDate
-        pdf = self.pdf
-        dates = self.dates
+        x = self.tweets.x
+        pdf = self.tweets.get_pdf()
+        cdf = self.tweets.get_cdf()
+        dates = self.tweets.dates
         ppdf = np.zeros(np.shape(x))
         ccdf = np.zeros(np.shape(x))
         self.logger.i('x:{}, y1:{}, dates:{}, pdf:{}'.format(np.shape(x), np.shape(pdf), np.shape(dates), np.shape(ppdf)))
         for i, d in enumerate(x):
             ppdf[i] += np.sum(pdf[i, F_NR_FAVOR:F_NR_RETWEET])
             ccdf[i] += np.sum(ppdf[:i])
+        # save
+        io.save('3.2.x_pdf_cdf_ppdf_ccdf.pkl', [x, pdf, cdf, ppdf, ccdf])
         # draw
         self.fig = plt.figure(figsize=(16,12))
         self.fig.add_subplot(2,2,1)
@@ -319,28 +249,77 @@ class Analyze():
         # 感染，痊愈，死亡
         :return:
         """
-        pass
+        periods = self.tweets.x
+        uids = np.unique(self.tweets.uids)
+        dates = self.tweets.dates
+        self.logger.i('uids:\n{}'.format(uids[:5]))
+        self.logger.i('periods: {}, uids: {}'.format(periods.shape, uids.shape))
+        patients = Patient(uids, periods)
+        self.logger.i('patients: -> count:{} staus: {}'.format(patients.patients.shape, patients.patients[0].status.shape))
+        # patients.update()
+        # for i, d in enumerate(periods):
+        for i, uid in enumerate(uids):
+            # update patient info on this day
+            # ith day of the date
+            # 1. use the index to find the day from tweets
+            # update all of the patients on this day
+            # for j, uid in enumerate(uids):
+            for j, d in enumerate(periods):
+                # 2. find the index, uid in tweets
+                # jth patients:
+                # 3. find the user status by uid and day
+                # 4. update status
+                for k, days in enumerate(dates):
+                    stat = nstat = patients.patients[i].status[j]
+                    if uids[i] == self.tweets.uids[k] and d == days:
+                        nstat = patients.patients[i].update(j)
+                    if nstat > 1 and stat < nstat:
+                        self.logger.i('i:{}, uid: {}, day: {}\tstatus: {}, nstatus: {}'.format(i, uid, days, stat, nstat))
+        io.save('3.2.1.uids.pkl', uids)
+        io.save('3.2.1.periods.pkl', periods)
+        io.save('3.2.1.tweets.pkl', self.tweets)
+        io.save('3.2.1.patients.pkl', patients)
+        # self.fig = plt.figure(figsize=(16,9))
+        # for i, uid in enumerate(uids[:1]):
+        #     plt.plot(periods, patients.patients[i].status, '.-')
+        # self.fig.savefig('3.2.1.a01.png', format='png')
+        # plt.show()
+        # exit(0)
 
     def _3_2_2(self):
         """
         #
         :return:
         """
-        pass
+        self.logger.i('3.2.2 begin')
+        cdf = self.tweets.get_cdf()
+        cdf_recover = np.max(cdf) - cdf
+        self.logger.i('cdf: {}'.format(cdf.shape))
+        io.save('3.2.2.cdf.pkl', cdf)
+        # draw
+        self.fig = plt.figure(figsize=(16,12))
+        self.fig.add_subplot(2,1,1)
+        plt.plot(self.x, np.log2(cdf), '.-')
+        self.fig.add_subplot(2,1,2)
+        plt.plot(self.x, np.log2(cdf_recover), '.-')
+        self.fig.savefig('3.2.2.a0.png', format='png')
+        # plt.show()
+        self.logger.i('3.2.2 finished....')
 
     def _3_2_3(self):
         """
         #
         :return:
         """
-        pass
+        self.load()
+        exit(0)
 
     def _3_2_4(self):
         """
         #
         :return:
         """
-        pass
+        self.logger.i('无.......')
 
     def _3_3(self):
         """
@@ -354,59 +333,109 @@ class Analyze():
         感知器分析结果
         :return:
         """
-        self.logger.i('label train: {}'.format(np.shape(self.label_train)))
-        self.logger.i('label test: {}'.format(np.shape(self.label_test)))
-        self.logger.i('gold train: {}'.format(np.shape(self.gold_train)))
-        self.logger.i('gold test: {}'.format(np.shape(self.gold_test)))
-
         # train
-        mean_train = np.mean(self.label_train)
-        var_train = np.var(self.label_train)
-        # cov_train = np.cov(self.label_train, self.gold_train)
-        # self.logger.i('cov: {}'.format(cov_train))
+        mean_train = np.mean(self.label_train.values)
+        var_train = np.var(self.label_train.values)
         self.logger.i('mean: {}, var: {}'.format(mean_train, var_train))
         self.fig = plt.figure(figsize=(16,18))
-        # plt.scatter(self.label_train, self.gold_train)
-        self.fig.add_subplot(2,1,1)
-        plt.hist(self.gold_train)
-        self.fig.add_subplot(2,1,2)
-        plt.hist(self.label_train)
-        # plt.plot(self.gold_train, self.label_train, 'r.-')
-        # self.fig.show()
+        self.fig.add_subplot(2,2,1)
+        n1, bins1, patches1 = plt.hist(self.gold_train.values)
+        plt.ylabel('predict of gold labels set')
+        mu, sigma = np.mean(self.gold_train.values), np.var(self.gold_train.values)
+        y1 = mlab.normpdf(bins1, mu, sigma) + mu
+        self.logger.i('bins:{}, y:{}'.format(bins1, y1))
+        self.fig.add_subplot(2,2,2)
+        plt.plot(bins1, y1, '.-')
+        self.fig.add_subplot(2,2,3)
+        n2, bins2, patches2 = plt.hist(self.label_train.values)
+        plt.ylabel('predict of train set')
+        self.fig.add_subplot(2,2,4)
+        y2 = mlab.normpdf(bins2, mean_train, var_train)
+        plt.plot(bins2, y2, '.-')
+        self.fig.savefig('3.3.1.a01.png', format='png')
+        # io.save('3.3.1.train.bins_bins_y.pkl')
+
+        # test
+        mean_test = np.mean(self.label_test.values)
+        var_test = np.var(self.label_test.values)
+        self.logger.i('mean: {}, var: {}'.format(mean_test, var_test))
+        self.fig = plt.figure(figsize=(16,18))
+        self.fig.add_subplot(2,2,1)
+        n, bins, patches = plt.hist(self.label_test.values)
+        plt.ylabel('predict of test set')
+        self.fig.add_subplot(2,2,2)
+        y = mlab.normpdf(bins, np.mean(self.label_test.values), np.var(self.label_test.values))
+        plt.plot(bins, y, '.-')
+        self.fig.add_subplot(2,2,3)
+        n, bins, patches = plt.hist(self.gold_test.values)
+        plt.ylabel('gold label of test set')
+        self.fig.add_subplot(2,2,4)
+        y = mlab.normpdf(bins, mean_test, var_test)
+        plt.plot(bins, y, '.-')
+        self.fig.savefig('3.3.1.a02.png', format='png')
+        # plt.show()
+        # exit(0)
+
+    def _3_3_2(self):
+        """
+        # bayes
+        :return:
+        """
+        # train
+        mean_train = np.mean(self.bayes_train.values)
+        var_train = np.var(self.bayes_train.values)
+        self.logger.i('mean: {}, var: {}'.format(mean_train, var_train))
+        self.fig = plt.figure(figsize=(16,18))
+        self.fig.add_subplot(2,2,1)
+        n, bins, patches = plt.hist(self.bayes_train.values)
+        plt.ylabel('predict of gold labels set')
+        mu, sigma = np.mean(self.bayes_train.values), np.var(self.bayes_train.values)
+        y = mlab.normpdf(bins, mu, sigma) + mu
+        self.logger.i('bins:{}, y:{}'.format(bins, y))
+        self.fig.add_subplot(2,2,2)
+        plt.plot(bins, y, '.-')
+        self.fig.add_subplot(2,2,3)
+        n, bins, patches = plt.hist(self.label_train.values)
+        plt.ylabel('predict of train set')
+        self.fig.add_subplot(2,2,4)
+        y = mlab.normpdf(bins, mean_train, var_train)
+        plt.plot(bins, y, '.-')
         self.fig.savefig('3.3.1.a01.png', format='png')
 
         # test
-        mean_test = np.mean(self.label_test)
-        var_test = np.var(self.label_test)
+        mean_test = np.mean(self.label_test.values)
+        var_test = np.var(self.label_test.values)
         # cov_test = np.cov(self.label_test, self.gold_test)
         self.logger.i('mean: {}, var: {}'.format(mean_test, var_test))
         self.fig = plt.figure(figsize=(16,18))
         # plt.scatter(self.label_test, self.gold_test)
         # plt.plot(self.gold_train, self.label_train, 'r.-')
         # plt.plot(self.gold_test, self.label_test, 'b.')
-        self.fig.add_subplot(2,1,1)
-        plt.hist(self.label_test)
+        self.fig.add_subplot(2,2,1)
+        n, bins, patches = plt.hist(self.label_test.values)
         plt.ylabel('predict of test set')
-        self.fig.add_subplot(2,1,2)
-        plt.hist(self.gold_test)
+        self.fig.add_subplot(2,2,2)
+        y = mlab.normpdf(bins, np.mean(self.label_test.values), np.var(self.label_test.values))
+        plt.plot(bins, y, '.-')
+        self.fig.add_subplot(2,2,3)
+        n, bins, patches = plt.hist(self.gold_test.values)
         plt.ylabel('gold label of test set')
-        # self.fig.show()
-        plt.show()
+        self.fig.add_subplot(2,2,4)
+        y = mlab.normpdf(bins, mean_test, var_test)
+        plt.plot(bins, y, '.-')
         self.fig.savefig('3.3.1.a02.png', format='png')
-
-    def _3_3_2(self):
-        """
-        #
-        :return:
-        """
-        pass
+        # plt.show()
+        exit(0)
 
     def _3_3_3(self):
         """
         #
         :return:
         """
-        pass
+        patients = io.load('3.2.1.patients.pkl')
+        for i, p in enumerate(patients.patients):
+            self.fig = plt.figure(figsize=(16,9))
+            plt.plot(self.x, p.status, '.-')
 
     def _3_3_4(self):
         """
@@ -432,11 +461,8 @@ class Analyze():
         # plt.grid(True)
         self.logger.i('draw -> finished.')
 
-    def save(self):
-        self.logger.i('save')
-        for name in self.figlist:
-            self.fig.savefig(name, format='png')
-        self.logger.i('save finished')
+    def show(self):
+        plt.show()
 
     def task(self):
         self.logger.i('task')
@@ -492,5 +518,6 @@ class Analyze():
             elif 15 == op:
                 self._3_3_5()
             elif 0 == op:
+                self.show()
                 break
         self.logger.i('task -> finished')

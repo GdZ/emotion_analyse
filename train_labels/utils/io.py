@@ -1,9 +1,24 @@
 # coding: utf-8
 import codecs
+import pickle
+# self define
 from utils import config
 from utils.logger import logger
 
 logger = logger(config)
+
+
+def save(path, variable):
+    with open(path, 'w') as f:
+        pickle.dump(variable, f)
+    f.close()
+
+
+def load(path):
+    with open(path) as f:
+        data = pickle.load(f)
+    f.close()
+    return data
 
 
 def open_file(path):

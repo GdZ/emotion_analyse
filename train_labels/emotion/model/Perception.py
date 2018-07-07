@@ -168,5 +168,5 @@ def check_accuracy(trained_labels, gold_labels, w):
     logger.i('[Perception->check_accuracy] emotion:{}'.format(emotion))
     evaluation = Emotion(gold_labels, trained_labels, emotion)
     evaluation.evaluation()
-    evaluation.print_result()
+    # evaluation.print_result()
     # return accuracy
