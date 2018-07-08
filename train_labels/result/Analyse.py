@@ -53,7 +53,7 @@ class Analyze(Item):
         self.cdf = self.tweets.get_cdf()
         # save data to npy
         # np.save('tweets.npy', self.tweets)
-        io.save('tweets.pkl', self.tweets)
+        io.save('pkl/tweets.pkl', self.tweets)
         # t = io.load('tweets.pkl')
         # self.logger.i('tweets: {},\nt: {}'.format(self.tweets.pdf[:5], t.pdf[:5]))
         # fig
@@ -73,9 +73,46 @@ class Analyze(Item):
         self.stop_word_list = pd.read_csv(stop_word_txt).values
 
     def load(self):
-        self.tweets = io.load('tweets.pkl')
-        # self.patients = io.load('3.2.1.patients.pkl')
-        # self.logger.i(self.patients.get('patients'))
+        self.logger.i('load begin')
+        tweets = io.load('pkl/tweets.pkl')
+        x = tweets.x
+        ouids = tweets.uids
+        uids = np.unique(ouids)
+        patients = []
+        # 易感，感染，回复
+        sus = infec = rec = np.zeros(np.shape(x))
+        split = [41, 227, 271, 320, 369, 403]
+        for i, uid in enumerate(uids):
+            p = io.load('pkl/3.2.1.patients_{}.pkl'.format(uid))
+            # max
+            for i, s in enumerate(split):
+                if 0 != i:
+                    idx = np.where(p.pdf[split[i-1]:s] > 0)
+                else:
+                    idx = np.where(p.pdf[:s] > 0)
+                count = np.shape(idx[0])[0]
+                # ii = np.where(idx[0] < s)
+                if 1 == count:
+                    rec[np.min(idx[0][:])] += 1
+                if 10 < count:
+                    infec[np.min(idx[0][:])] += 2
+        self.logger.i('rec: {}'.format(rec))
+        self.logger.i('infec: {}'.format(infec))
+        ccdf = cdf = np.zeros(shape=np.shape(rec))
+        for i, pdf in enumerate(infec):
+            cdf[i] = np.sum(infec[:i])
+            ccdf[i] = np.sum(rec[:i])
+        self.fig = plt.figure(figsize=(16,9))
+        # self.fig.add_subplot(2,1,1)
+        # plt.plot(x, cdf, 'x-')
+        # plt.plot(x, ccdf, '.-')
+        # self.fig.add_subplot(2,1,2)
+        plt.plot(x, np.log2(rec))
+        plt.plot(x, np.log2(ccdf))
+        self.fig.savefig('load.png', format='png')
+        self.logger.i('load end...')
+        # plt.show()
+        exit(0)
 
     def _3_1(self):
         """
@@ -125,13 +162,14 @@ class Analyze(Item):
         self.logger.i('_3_1_1')
         texts = self.tweets.texts
         keywords = self.tweets.keyword
+        keywords = ['feinstaub']
         self.fig = plt.figure(figsize=(16,9))
         for i, k in enumerate(keywords):
             x,y = self.keyword_count(k, texts)
             plt.plot(x, y, '.-')
             plt.legend(keywords)
-            io.save('3.1.1.{}.x_y.pkl'.format(i), [x,y])
-        self.fig.savefig('3.1.1.a01.png', format='png')
+            io.save('3.1.1.{}.x_y--.pkl'.format(i), [x,y])
+        self.fig.savefig('3.1.1.a01--.png', format='png')
         # plt.show()
         self.logger.i('_3_1_1 -> finished')
 
@@ -250,8 +288,10 @@ class Analyze(Item):
         :return:
         """
         periods = self.tweets.x
-        uids = np.unique(self.tweets.uids)
+        ouids = self.tweets.uids
+        uids = np.unique(ouids)
         dates = self.tweets.dates
+        labels = self.tweets.labels
         self.logger.i('uids:\n{}'.format(uids[:5]))
         self.logger.i('periods: {}, uids: {}'.format(periods.shape, uids.shape))
         patients = Patient(uids, periods)
@@ -271,20 +311,23 @@ class Analyze(Item):
                 # 4. update status
                 for k, days in enumerate(dates):
                     stat = nstat = patients.patients[i].status[j]
-                    if uids[i] == self.tweets.uids[k] and d == days:
+                    # label = 0
+                    if uid == ouids[k] and d == days:
                         nstat = patients.patients[i].update(j)
                     if nstat > 1 and stat < nstat:
                         self.logger.i('i:{}, uid: {}, day: {}\tstatus: {}, nstatus: {}'.format(i, uid, days, stat, nstat))
-        io.save('3.2.1.uids.pkl', uids)
-        io.save('3.2.1.periods.pkl', periods)
-        io.save('3.2.1.tweets.pkl', self.tweets)
-        io.save('3.2.1.patients.pkl', patients)
-        # self.fig = plt.figure(figsize=(16,9))
-        # for i, uid in enumerate(uids[:1]):
-        #     plt.plot(periods, patients.patients[i].status, '.-')
-        # self.fig.savefig('3.2.1.a01.png', format='png')
+                    # if 1804 == k:
+                    #     self.logger.i('i:{}, uid: {}, day: {}\tstatus: {}, nstatus: {}'.format(i, uid, days, stat, nstat))
+            io.save('pkl/3.2.1.patients_{}.pkl'.format(uid), patients.patients[i])
+        io.save('pkl/3.2.1.uids.pkl', uids)
+        io.save('pkl/3.2.1.periods.pkl', periods)
+        io.save('pkl/3.2.1.tweets.pkl', self.tweets)
+        self.fig = plt.figure(figsize=(16,9))
+        for i, uid in enumerate(uids):
+            plt.plot(periods, patients.patients[i].status, '.-')
+        self.fig.savefig('3.2.1.a01.png', format='png')
         # plt.show()
-        # exit(0)
+        exit(0)
 
     def _3_2_2(self):
         """
@@ -519,5 +562,7 @@ class Analyze(Item):
                 self._3_3_5()
             elif 0 == op:
                 self.show()
+            else:
+                self.load()
                 break
         self.logger.i('task -> finished')

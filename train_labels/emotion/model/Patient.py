@@ -36,7 +36,10 @@ class People:
     def update(self, idx):
         self.status[idx] += 1
         self.pdf[idx] = self.status[idx]
-        self.cdf[idx] = np.sum(self.pdf[:idx])
+        # self.label[idx] = label
+        # self.cdf[idx] += self.pdf[:idx]
+        # print('People.update-> idx:{}, status:{}, pdf:{}, cdf:{}'.format(idx, self.status[idx], self.pdf[idx], self.cdf[idx]))
+        # print('People.update-> idx:{}, status:{}, pdf:{}'.format(idx, self.status[idx], self.pdf[idx]))
         return self.status[idx]
 
     def infection(self, day):

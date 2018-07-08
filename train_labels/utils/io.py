@@ -15,6 +15,7 @@ def save(path, variable):
 
 
 def load(path):
+    logger.d('io.load ---> {}'.format(path))
     with open(path) as f:
         data = pickle.load(f)
     f.close()
