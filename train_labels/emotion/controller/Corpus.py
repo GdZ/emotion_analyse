@@ -183,9 +183,9 @@ class Corpus:
         file_vector_test = io.open_file(VECTOR_TEST_TXT)
         word_list = []
         # store the vector of training data
-        vector_train = []
+        train_vec = []
         # store the vector of testing data
-        vector_test = []
+        test_vec = []
 
         logger.d('[corpus->train_perception] file_word_list: %s' % type(file_word_list))
 
@@ -196,30 +196,30 @@ class Corpus:
 
         logger.i('[corpus->train_perception] read word list')
         for line in file_vector_train:
-            vector_train.append(line.strip())
+            train_vec.append(line.strip())
 
         # restore data from file_vector_test to vector_test
         for line in file_vector_test:
-            vector_test.append(line.strip())
+            test_vec.append(line.strip())
 
         logger.i('[corpus->train_perception] read vector text for train')
         logger.i('[corpus->train_perception] word_list:{}, gold_labels:{}, vector_train:{}'.format(
-                                            len(word_list), len(self.train_gold_labels), len(vector_train)))
-        x_vec, y_labels, w, y = per.train(word_list, self.train_gold_labels, vector_train, iteration=20)
+                                            len(word_list), len(self.train_gold_labels), len(train_vec)))
+        x_vec, y_labels, w, y = per.train(word_list, self.train_gold_labels, train_vec, iteration=20)
         logger.i('[corpus->train_perception] x_vec:{}, y_labels:{}, w:{}, y:{}'.format(len(x_vec), len(y_labels), len(w), len(y)))
 
         # create labels for training data
-        y_predict = per.generate_labels(x_vec, w)
+        y_hat = per.generate_labels(x_vec, w)
         logger.i('[corpus->train_perception] x_vec: {}'.format(len(x_vec)))
         logger.i('[corpus->train_perception] y_labels: {}'.format(y_labels[:10]))
-        logger.i('[corpus->train_perception] y_predict: {}'.format(y_predict[:10]))
+        logger.i('[corpus->train_perception] y_predict: {}'.format(y_hat[:10]))
         logger.i('[corpus->train_perception] y_gold_labels: {}'.format(self.train_gold_labels[:10]))
         # checking correct percent of the training data
-        per.check_accuracy(y_predict, y_labels, w)
+        per.check_accuracy(y_hat, y_labels, w)
         # store labels for test to file
         f_l = io.open_file_mode(LABELS_TRAIN_FILE_TXT, "w")
         # for l in yt_predict:
-        for l in per.value_labels(y_predict):
+        for l in per.value_labels(y_hat):
             # l = l + 1;
             logger.d('[corpus->train_perception] l:{}'.format(l))
             f_l.write(str(l))
@@ -228,23 +228,23 @@ class Corpus:
 
         # ------------------------------------------------------------------
         # predict the label for test
-        xt, yt_labels, wt, yt = per.train(word_list, self.train_gold_labels, vector_test, iteration=20)
-        logger.i('[corpus->train_perception] xt:{}, \n\t\tyt_labels:{}, \n\t\twt:{}'.format(len(xt), yt_labels[:10], wt.shape))
+        xt_vec, yt_labels, wt, yt = per.train(word_list, self.test_gold_labels, test_vec, iteration=20)
+        logger.i('[corpus->train_perception] xt:{}, \n\t\tyt_labels:{}, \n\t\twt:{}'.format(len(xt_vec), yt_labels[:10], wt.shape))
 
         # predict labels for test
-        yt_predict = per.generate_labels(xt, wt)
-        logger.i('[corpus->train_perception] yt_predict: {}'.format(yt_predict[:10]))
-        logger.i('[corpus->train_perception] yt_predict_labels: {}'.format(per.value_labels(yt_predict)[:10]))
+        yt_hat = per.generate_labels(xt_vec, w)
+        logger.i('[corpus->train_perception] yt_predict: {}'.format(yt_hat[:10]))
+        logger.i('[corpus->train_perception] yt_predict_labels: {}'.format(per.value_labels(yt_hat)[:10]))
         logger.i('[corpus->train_perception] yt_gold_labels:{}'.format(yt_labels[:10]))
 
         # check the accuracy
         # per.check_accuracy(yt_predict, yt_labels, wt)
-        per.check_accuracy(yt_predict, self.test_gold_labels, wt)
+        per.check_accuracy(yt_hat, self.test_gold_labels, wt)
 
         # store labels for test to file
         f_l = io.open_file_mode(LABELS_TEST_FILE_TXT, "w")
         # for l in yt_predict:
-        for l in per.value_labels(yt_predict):
+        for l in per.value_labels(yt_hat):
             # l = l + 1;
             logger.d('[corpus->train_perception] l:{}'.format(l))
             f_l.write(str(l))

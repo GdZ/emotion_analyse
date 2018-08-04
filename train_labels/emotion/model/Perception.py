@@ -40,7 +40,8 @@ def parse(word_list, train_label, vector_text):
     for line in train_label:
         labels.append(line.strip())
 
-    emotion_num = len(set(labels))
+    # emotion_num = len(set(labels))
+    emotion_num = len(emotion.values())
 
     for line in vector_text:
         logger.d('[ps->parse] line: %s' % line)
@@ -65,28 +66,28 @@ def parse(word_list, train_label, vector_text):
 # ######################## perception with sparse matrix(train) ################
 # vector: list; weight: matrix
 def matrix_dot(vector, weight):
-    y_pre = np.zeros([1, weight.shape[1]])
+    vec_hat = np.zeros([1, weight.shape[1]])
 
     for i in vector:
         # logger.d("[ps->matrix_dot] -- weight.len: %d, len(weight[%d]): %s" % (len(weight), i, len(weight[i])))
-        y_pre = y_pre + weight[i, :]
+        vec_hat = vec_hat + weight[i, :]
 
-    return y_pre
+    return vec_hat
 
 
-def mod_weight(vector, weight, y_gold, y_pre):
+def mod_weight(vector, weight, y, y_hat):
     for i in vector:
-        logger.d("[ps->mod_weight] -- i:%d, y_gold:%d, y_pre:%d" % (i, y_gold, y_pre))
-        weight[i, y_gold] += 1
-        weight[i, y_pre] -= 1
+        logger.d("[ps->mod_weight] -- i:%d, y_gold:%d, y_pre:%d" % (i, y, y_hat))
+        weight[i, y] += 1
+        weight[i, y_hat] -= 1
 
     return weight
 
 
 def train(word_list, train_label, vector_text, iteration):
     vector, label, feature_num, emotion_num, y = parse(word_list, train_label, vector_text)
-    logger.d("[ps->train] len(vectors):%d, len(y):%d, feature_num:%d, emotion_num:%d" \
-             % (len(vector), len(label), feature_num, emotion_num))
+    logger.d("[ps->train] len(vectors):{}, len(y):{}, feature_num:{}, emotion_num:{}"  \
+                .format(len(vector), len(label), feature_num, emotion_num))
 
     weight = np.zeros([feature_num, emotion_num])
 
@@ -97,21 +98,24 @@ def train(word_list, train_label, vector_text, iteration):
                 logger.d('[ps->train] m is >= len(y)')
                 continue
             logger.d('[ps->train] label:[{}]: {}\nemotion: {}'.format(m, label, emotion))
+            vec = vector[m]
             y_gold_str = label[m]
             y_gold = emotion[y_gold_str]
-            y_pre = matrix_dot(vector[m], weight)
+
+            y_hat = matrix_dot(vec, weight)
+
             # logger.d("[ps->train] emotion: %s" % emotion)
             # logger.d("[ps->train] y_gold_str, y_gold, y_pre = %s, %s, %s" % (y_gold_str, y_gold, str(y_pre)))
-            re = np.where(y_pre == np.max(y_pre))
+            re = np.where(y_hat == np.max(y_hat))
             # logger.d("[ps->train] re: %s" % str(re))
 
             if len(re[1]) >= 2:
-                y_pre = min(re[1])
+                y_hat = min(re[1])
             else:
-                y_pre = re[1][0]
+                y_hat = re[1][0]
 
-            if y_pre != y_gold:
-                weight = mod_weight(vector[m], weight, y_gold, y_pre)
+            if y_hat != y_gold:
+                weight = mod_weight(vec, weight, y_gold, y_hat)
 
     return vector, label, weight, y
 
