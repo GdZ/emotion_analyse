@@ -33,7 +33,7 @@ class Emotion:
         # for each emotion
         for idx, e in enumerate(self.emotion):
             self.tp = self.tn = self.fp = self.fn = 0
-            self.accuracy = self.precision = self.recall = self.F1 = 0.
+            self.accuracy = 0.
             for i in range(min(len(self.gold_labels), len(self.predictions))):
                 # logger.i('[Evaluation->evaluation] i:{} gold: {}, prediction[i]: {}, \nemotion:{}'.format(i, self.list_gold[i], self.list_prediction[i], self.emotion))
                 if self.gold_labels[i] in labels and self.emotion[self.gold_labels[i]] == self.predictions[i]:

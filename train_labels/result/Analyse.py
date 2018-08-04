@@ -45,7 +45,13 @@ class Analyze(Item):
         # 3.1.*
         # import data from csv
         self.tweets = Tweet(pd.read_csv(marked_csv, sep=';').values)
-        self.tweets.keyword = ['feinstaub','feintaubalarm','vvs','kamine','kaminoefen','komfort','komfortkamine','moovel']
+        self.tweets.keyword = ['feinstaub',
+                               # 'feintaubalarm',
+                               'vvs','kamine','kaminoefen',
+                               'komfort',
+                               # 'komfortkamine',
+                               # 'moovel'
+                               ]
         # self.pdf = self.tweets.get_pdf()
         # self.cdf = np.zeros((np.size(self.tweets.get_x()), self.tweets.SIZE))
         self.x = self.tweets.x
@@ -71,6 +77,7 @@ class Analyze(Item):
         self.process_train_txt = pd.read_csv(processing_train_txt).values
         self.bayes_processing_train_txt = pd.read_csv(bayes_processing_train_txt).values
         self.stop_word_list = pd.read_csv(stop_word_txt).values
+        self.alarms = np.asarray([['2016.01.18', '2016.01.22'],['2016.02.26', '2016.02.28'],['2016.03.09', '2016.03.11'],['2016.03.14', '2016.03.22'],['2016.04.10', '2016.04.11'],['2016.10.27', '2016.11.01'],['2016.11.14', '2016.11.15'],['2016.11.21', '2016.12.01'],['2016.12.04', '2016.12.10'],['2016.12.13', '2016.12.23'],['2017.01.09', '2017.01.10'],['2017.01.16', '2017.01.30'],['2017.02.02', '2017.02.03'],['2017.02.07', '2017.02.16'],['2017.02.19', '2017.02.20'],['2017.03.12', '2017.03.17'],['2017.03.25', '2017.04.01'],['2017.04.07', '2017.04.09']])
 
     def load(self):
         self.logger.i('load begin')
@@ -126,33 +133,38 @@ class Analyze(Item):
 
         # 日期-数量
         self.fig = plt.figure(figsize=(16,9))
-        self.draw(x, pdf[:,self.F_DATE], 'r-x',
-                  title='date-count of tweets',
-                  xlabel='Date(days)',
-                  ylabel='count of tweet everyday')
+        self.draw(x, pdf[:,self.F_DATE])
+        plt.title('date-count of tweets')
+        plt.xlabel('Date(days)')
+        plt.ylabel('count of tweet everyday')
         self.fig.savefig('3.1.a01.png', format='png')
 
         # 日期-count(like, retweet, favor)
-        self.fig = plt.figure(figsize=(16,9))
-        self.draw(x, pdf[:,F_NR_FAVOR], shape='r.-')
-        self.draw(x, pdf[:,F_NR_REPLY], shape='b.-')
-        self.draw(x, pdf[:,F_NR_RETWEET], shape='g.-',
-                  title='date-count of tweets',
-                  xlabel='Date(days)',
-                  ylabel='count of tweet everyday',
-                  lengend=['count of favor from all tweets in one day',
-                           'count of reply from all tweets in one day',
-                           'count of retweet from all tweets in one day'])
+        self.fig = plt.figure(figsize=(16,21))
+        self.fig.add_subplot(3,1,1)
+        plt.title('date-count of tweets')
+        self.draw(x, pdf[:,F_NR_FAVOR], shape='.', color='b')
+        plt.ylabel('count of favor everyday')
+        plt.legend(['count of tweets in one day', 'alarm'])
+        self.fig.add_subplot(3,1,2)
+        self.draw(x, pdf[:,F_NR_REPLY], shape='.', color='g')
+        plt.ylabel('count of reply everyday')
+        plt.legend(['count of tweets in one day', 'alarm'])
+        self.fig.add_subplot(3,1,3)
+        self.draw(x, pdf[:,F_NR_RETWEET], shape='.', color='m')
+        plt.xlabel('Date(days)')
+        plt.ylabel('count of retweet everyday')
+        plt.legend(['count of tweets in one day', 'alarm'])
         self.fig.savefig('3.1.a02.png', format='png')
 
         # 日期-情绪变化
         self.fig = plt.figure(figsize=(16,9))
-        self.draw(x, pdf[:, F_LABELSVALUE]/pdf[:, F_DATE], shape='r-*',
-                  title='date-labels of tweets',
-                  xlabel='Date(days)',
-                  ylabel='average of labels in everyday')
+        self.draw(x, pdf[:, F_LABELSVALUE]/pdf[:, F_DATE])
+        plt.title('date-labels of tweets')
+        plt.xlabel('Date(days)')
+        plt.ylabel('average of labels in everyday')
         self.fig.savefig('3.1.a03.png', format='png')
-        # plt.show()
+        plt.show()
 
     def _3_1_1(self):
         """
@@ -162,15 +174,16 @@ class Analyze(Item):
         self.logger.i('_3_1_1')
         texts = self.tweets.texts
         keywords = self.tweets.keyword
-        keywords = ['feinstaub']
+        # keywords = ['feinstaub']
         self.fig = plt.figure(figsize=(16,9))
         for i, k in enumerate(keywords):
             x,y = self.keyword_count(k, texts)
             plt.plot(x, y, '.-')
             plt.legend(keywords)
+            plt.xticks(x[1:-1:40])
             io.save('3.1.1.{}.x_y--.pkl'.format(i), [x,y])
-        self.fig.savefig('3.1.1.a01--.png', format='png')
-        # plt.show()
+        self.fig.savefig('3.1.1.a01.png', format='png')
+        plt.show()
         self.logger.i('_3_1_1 -> finished')
 
     def keyword_count(self, keywords, tweets):
@@ -209,21 +222,49 @@ class Analyze(Item):
 
         # 设置停用词
         stopwords = set(STOPWORDS)
-        self.logger.i('stop_word_list: {}'.format(np.shape(self.stop_word_list)))
-        for word in self.stop_word_list:
-            self.logger.d('word: {}'.format(word))
-            stopwords.add(str(word))
+        # self.logger.i('stop_word_list: {}'.format(np.shape(self.stop_word_list)))
+        # for word in self.stop_word_list:
+        #     self.logger.d('word: {}'.format(word))
+        #     stopwords.add(str(word))
+        stopwords.add('stuttgart')
+        stopwords.add('alle')
+        stopwords.add('nach')
+        stopwords.add('de')
+        stopwords.add('fuer')
+        stopwords.add('aber')
+        stopwords.add('ab')
+        stopwords.add('noch')
+        stopwords.add('mal')
+        stopwords.add('gibt')
+        stopwords.add('auch')
+        stopwords.add('gilt')
+        stopwords.add('nur')
+        stopwords.add('ja')
+        stopwords.add('nicht')
+        stopwords.add('wie')
+        stopwords.add('um')
+        stopwords.add('swraktuell')
+        stopwords.add('gleich')
+        stopwords.add('aktuell')
+        stopwords.add('index')
+        stopwords.add('jetzt')
+        stopwords.add('news')
+        stopwords.add('stn_news')
+        stopwords.add('via')
+        stopwords.add('machen')
+        stopwords.add('id')
+        stopwords.add('swr')
 
         # 你可以通过 mask 参数 来设置词云形状
         wc = WordCloud(background_color="white",
-                       max_words=2000,
+                       max_words=50,
                        width=640,
                        height=720,
                        # mask=alice_coloring,
                        margin=2,
                        stopwords=stopwords,
-                       max_font_size=200,
-                       random_state=42)
+                       max_font_size=300,
+                       random_state=50)
         # generate word cloud
         texts = ''
         for w in self.process_train_txt:
@@ -245,7 +286,7 @@ class Analyze(Item):
         plt.imshow(wc, interpolation="bilinear")
         plt.axis("off")
         wc.to_file('3.1.3.a01.png')
-        # plt.show()
+        plt.show()
 
     def _3_2(self):
         """
@@ -494,14 +535,25 @@ class Analyze(Item):
         """
         pass
 
-    def draw(self, x, y, shape='r.-', xlabel='', ylabel='', title='', lengend=''):
+    # def draw(self, x, y, shape='r.-', xlabel='', ylabel='', title='', lengend=''):
+    def draw(self, x, y, shape='.', color='b'):
         self.logger.i('draw')
-        plt.plot(x, y, shape);
-        plt.title(title)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.legend(lengend)
-        # plt.grid(True)
+        idx = []
+        color = ['r{}'.format(shape), '{}-{}'.format(color, shape)]
+
+        plt.plot(x, y, color[1])
+
+        for al in self.alarms:
+            tmp = [np.where(x == al[0])[0][0], np.where(x == al[1])[0][0]]
+            idx.append(tmp)
+        idx = np.asarray(idx)
+
+        for xx in idx:
+            pos = xx
+            xxx = np.linspace(pos[0], pos[1], num=pos[1]-pos[0]+1, dtype=int)
+            plt.plot(xxx, y[xxx], color[0])
+        plt.xticks(x[1:-1:40])
+
         self.logger.i('draw -> finished.')
 
     def show(self):
@@ -562,6 +614,7 @@ class Analyze(Item):
                 self._3_3_5()
             elif 0 == op:
                 self.show()
+                break
             else:
                 self.load()
                 break
