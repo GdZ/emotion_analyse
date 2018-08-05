@@ -110,15 +110,28 @@ class Analyze(Item):
             cdf[i] = np.sum(infec[:i])
             ccdf[i] = np.sum(rec[:i])
         self.fig = plt.figure(figsize=(16,9))
-        # self.fig.add_subplot(2,1,1)
+        # self.fig.add_subplot(3,1,1)
         # plt.plot(x, cdf, 'x-')
         # plt.plot(x, ccdf, '.-')
-        # self.fig.add_subplot(2,1,2)
-        plt.plot(x, np.log2(rec))
-        plt.plot(x, np.log2(ccdf))
-        self.fig.savefig('load.png', format='png')
+        plt.plot(x, (2736-rec), 'b:')
+        plt.xticks(x[0:-1:40])
+        self.fig.savefig('load_a1.png', format='png')
+        self.fig = plt.figure(figsize=(16,9))
+        # self.fig.add_subplot(3,1,2)
+        plt.plot(x, rec, 'g.')
+        plt.xticks(x[0:-1:40])
+        # plt.plot(x, np.log2(2736-rec), ':')
+        # plt.xticks(x[0:-1:40])
+        self.fig.savefig('load_a2.png', format='png')
+        self.fig = plt.figure(figsize=(16,9))
+        # self.fig.add_subplot(3,1,3)
+        plt.plot(x, np.log2(rec), '.')
+        plt.plot(x, np.log2(ccdf), '.-')
+        print('{}'.format(2736-rec))
+        plt.xticks(x[0:-1:40])
+        self.fig.savefig('load_a3.png', format='png')
         self.logger.i('load end...')
-        # plt.show()
+        plt.show()
         exit(0)
 
     def _3_1(self):
@@ -365,7 +378,9 @@ class Analyze(Item):
         io.save('pkl/3.2.1.tweets.pkl', self.tweets)
         self.fig = plt.figure(figsize=(16,9))
         for i, uid in enumerate(uids):
-            plt.plot(periods, patients.patients[i].status, '.-')
+            # plt.plot(periods, patients.patients[i].status, '.-')
+            self.draw(periods, patients.patients[i].status, shape='.-')
+        plt.xticks(periods[0:-1:40])
         self.fig.savefig('3.2.1.a01.png', format='png')
         # plt.show()
         exit(0)
@@ -375,19 +390,22 @@ class Analyze(Item):
         #
         :return:
         """
+        x = self.x
         self.logger.i('3.2.2 begin')
         cdf = self.tweets.get_cdf()
         cdf_recover = np.max(cdf) - cdf
         self.logger.i('cdf: {}'.format(cdf.shape))
         io.save('3.2.2.cdf.pkl', cdf)
         # draw
-        self.fig = plt.figure(figsize=(16,12))
-        self.fig.add_subplot(2,1,1)
-        plt.plot(self.x, np.log2(cdf), '.-')
-        self.fig.add_subplot(2,1,2)
-        plt.plot(self.x, np.log2(cdf_recover), '.-')
+        self.fig = plt.figure(figsize=(16,9))
+        # self.fig.add_subplot(2,1,1)
+        # plt.plot(self.x, np.log2(cdf), '.-')
+        # self.fig.add_subplot(2,1,2)
+        # plt.plot(self.x, np.log2(cdf_recover), '.-')
+        self.draw(x, np.log2(cdf), shape='.')
+        plt.xticks(x[1:-1:40])
         self.fig.savefig('3.2.2.a0.png', format='png')
-        # plt.show()
+        plt.show()
         self.logger.i('3.2.2 finished....')
 
     def _3_2_3(self):
@@ -417,25 +435,33 @@ class Analyze(Item):
         感知器分析结果
         :return:
         """
+        bins = range(10)
         # train
+        self.fig = plt.figure(figsize=(16,12))
+        self.fig.add_subplot(2,2,1)
+        # n, bins, patches = plt.hist(self.gold_train.values)
+        plt.plot(self.gold_train.values, 'b.')
+        plt.ylabel('gold labels set')
+
+        self.fig.add_subplot(2,2,2)
+        mu, sigma = np.mean(self.gold_train.values), np.var(self.gold_train.values)
+        y_train_fit = mlab.normpdf(bins, mu, sigma) + mu
+        self.logger.i('bins:{}, y:{}'.format(bins, y_train_fit))
+        plt.plot(bins, y_train_fit, '.-')
+        plt.title('mu:{:.4f}, sigma:{:.4f}'.format(mu, sigma))
+
+        self.fig.add_subplot(2,2,3)
+        # n, bins, patches = plt.hist(self.label_train.values)
+        plt.plot(self.label_train.values, 'g.')
+        plt.ylabel('predict of train set')
+
+        self.fig.add_subplot(2,2,4)
         mean_train = np.mean(self.label_train.values)
         var_train = np.var(self.label_train.values)
         self.logger.i('mean: {}, var: {}'.format(mean_train, var_train))
-        self.fig = plt.figure(figsize=(16,18))
-        self.fig.add_subplot(2,2,1)
-        n1, bins1, patches1 = plt.hist(self.gold_train.values)
-        plt.ylabel('predict of gold labels set')
-        mu, sigma = np.mean(self.gold_train.values), np.var(self.gold_train.values)
-        y1 = mlab.normpdf(bins1, mu, sigma) + mu
-        self.logger.i('bins:{}, y:{}'.format(bins1, y1))
-        self.fig.add_subplot(2,2,2)
-        plt.plot(bins1, y1, '.-')
-        self.fig.add_subplot(2,2,3)
-        n2, bins2, patches2 = plt.hist(self.label_train.values)
-        plt.ylabel('predict of train set')
-        self.fig.add_subplot(2,2,4)
-        y2 = mlab.normpdf(bins2, mean_train, var_train)
-        plt.plot(bins2, y2, '.-')
+        y2 = mlab.normpdf(bins, mean_train, var_train)
+        plt.plot(bins, y2, '.-')
+        plt.title('mu:{:.4f}, sigma:{:.4f}'.format(mean_train, var_train))
         self.fig.savefig('3.3.1.a01.png', format='png')
         # io.save('3.3.1.train.bins_bins_y.pkl')
 
@@ -443,21 +469,31 @@ class Analyze(Item):
         mean_test = np.mean(self.label_test.values)
         var_test = np.var(self.label_test.values)
         self.logger.i('mean: {}, var: {}'.format(mean_test, var_test))
-        self.fig = plt.figure(figsize=(16,18))
+        self.fig = plt.figure(figsize=(16,12))
         self.fig.add_subplot(2,2,1)
-        n, bins, patches = plt.hist(self.label_test.values)
-        plt.ylabel('predict of test set')
-        self.fig.add_subplot(2,2,2)
-        y = mlab.normpdf(bins, np.mean(self.label_test.values), np.var(self.label_test.values))
-        plt.plot(bins, y, '.-')
-        self.fig.add_subplot(2,2,3)
-        n, bins, patches = plt.hist(self.gold_test.values)
+        # n, bins, patches = plt.hist(self.gold_test.values, 11)
+        plt.plot(self.gold_test.values, 'b.')
         plt.ylabel('gold label of test set')
+
+        self.fig.add_subplot(2,2,2)
+        y = mlab.normpdf(bins, np.mean(self.gold_test.values), np.var(self.gold_test.values))
+        plt.plot(range(10), y, '.-')
+        plt.title('mu:{:.4f}, sigma:{:.4f}'.format(np.mean(self.gold_test.values), np.var(self.gold_test.values)))
+
+        # self.fig = plt.figure(figsize=(16,12))
+        self.fig.add_subplot(2,2,3)
+        plt.plot(self.label_test.values, 'g.')
+        # n, bins, patches = plt.hist(self.label_test.values, 11)
+        # print('n:{}\nbins:{}\npatches:{}'.format(n, bins, patches))
+        plt.ylabel('predict of test set')
+
         self.fig.add_subplot(2,2,4)
-        y = mlab.normpdf(bins, mean_test, var_test)
-        plt.plot(bins, y, '.-')
+        y_fit = mlab.normpdf(bins, mean_test, var_test)
+        plt.plot(range(10), y_fit, '.-')
+        plt.title('mu:{:.4f}, sigma:{:.4f}'.format(mean_test, var_test))
+        # plt.axis('tight')
         self.fig.savefig('3.3.1.a02.png', format='png')
-        # plt.show()
+        plt.show()
         # exit(0)
 
     def _3_3_2(self):
@@ -613,7 +649,7 @@ class Analyze(Item):
             elif 15 == op:
                 self._3_3_5()
             elif 0 == op:
-                self.show()
+                # self.show()
                 break
             else:
                 self.load()
